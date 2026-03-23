@@ -2,44 +2,31 @@ import {
     createHeader,
     createStudentInfo,
     createFeeTable,
-    createTotalSection,
-    createFooter,
+    createLatePaymentNote,
+    createPaymentMethods,
+    createSignatureSection,
     buildDocDefinition
 } from './baseTemplate'
 
-export function buildExamFeeReport(data) {
-    const header = createHeader({
-        ...data,
-        documentTitle: 'EXAMINATION FEE INVOICE'
-    })
-
-    const studentInfo = createStudentInfo(data)
+/**
+ * Builds an Examination Fee invoice PDF document definition.
+ */
+export function buildExamFeeReport(data = {}) {
+    const header = createHeader(data.header)
+    const studentInfo = createStudentInfo(data.studentInfo)
 
     const feeTable = createFeeTable(data.items || [], {
-        columns: ['no', 'description', 'amount']
+        amountInWords: data.amountInWords || '',
+        totalAmount: data.totalAmount
     })
 
-    const subtotal = (data.items || []).reduce((sum, item) => sum + (item.amount || 0), 0)
-
-    const totalSection = createTotalSection({
-        subtotal,
-        netTotal: subtotal,
-        amountInWords: data.amountInWords || ''
-    })
-
-    const footer = createFooter({
-        paymentNotes: data.paymentNotes || [
-            'Examination fees are non-refundable.',
-            'Payment must be completed before the examination date.',
-            'Please present this receipt on the day of examination.'
-        ],
-        showSignature: true
-    })
+    const latePaymentNote = createLatePaymentNote(data.latePayment)
+    const paymentMethods = createPaymentMethods(data.paymentMethods)
+    const signature = createSignatureSection(data.signature)
 
     return buildDocDefinition({
         header,
         studentInfo,
-        content: [feeTable, totalSection],
-        footer
+        content: [feeTable, latePaymentNote, paymentMethods, signature]
     })
 }
