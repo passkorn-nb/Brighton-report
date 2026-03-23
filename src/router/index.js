@@ -3,9 +3,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 const routes = [
     {
         path: '/',
-        name: 'Home',
-        component: () => import('@/views/HomePage.vue'),
-        meta: { layout: 'customer' }
+        name: 'ReportExport',
+        component: () => import('@/views/ReportExportPage.vue')
     }
 ]
 

@@ -16,6 +16,11 @@ export default {
         }
     },
 
+    mounted() {
+        const el = document.querySelector('.drop-overlay')
+        el.style.display = 'none'
+    },
+
     watch: {
         show(newVal) {
             const el = document.querySelector('.drop-overlay')
