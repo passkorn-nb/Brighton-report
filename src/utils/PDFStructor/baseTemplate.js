@@ -1,4 +1,5 @@
 import dayjs from 'dayjs'
+import qrSvgRaw from '@/assets/qr.svg?raw'
 
 /**
  * Shared base template elements for all KCIS invoice report types.
@@ -20,10 +21,10 @@ export function createHeader(data = {}) {
     return {
         stack: [
             { text: schoolName, style: 'schoolName', alignment: 'center' },
-            { text: schoolLocation, style: 'schoolLocation', alignment: 'center', margin: [0, 0, 0, 2] },
+            { text: schoolLocation, style: 'schoolLocation', alignment: 'center', margin: [0, 0, 0, 1] },
             { text: address, style: 'addressText', alignment: 'center' },
-            { text: contactLine, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 15] },
-            { text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, 0, 0, 15] }
+            { text: contactLine, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 8] },
+            { text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, 0, 0, 8] }
         ]
     }
 }
@@ -79,7 +80,7 @@ export function createStudentInfo(data = {}) {
             body
         },
         layout: 'noBorders',
-        margin: [0, 0, 0, 15]
+        margin: [0, 0, 0, 8]
     }
 }
 
@@ -127,7 +128,7 @@ export function createStudentInfoExternal(data = {}) {
             body
         },
         layout: 'noBorders',
-        margin: [0, 0, 0, 20]
+        margin: [0, 0, 0, 8]
     }
 }
 
@@ -139,7 +140,7 @@ export function createFeeTable(items = [], options = {}) {
         showNo = true,
         amountInWords = '',
         totalAmount = null,
-        minRows = 6
+        minRows = 5
     } = options
 
     // Calculate total if not provided
@@ -216,12 +217,12 @@ export function createFeeTable(items = [], options = {}) {
             vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 1 : 0),
             hLineColor: () => '#000000',
             vLineColor: () => '#000000',
-            paddingLeft: () => 8,
-            paddingRight: () => 8,
-            paddingTop: () => 6,
-            paddingBottom: () => 6
+            paddingLeft: () => 6,
+            paddingRight: () => 6,
+            paddingTop: () => 4,
+            paddingBottom: () => 4
         },
-        margin: [0, 0, 0, 5]
+        margin: [0, 0, 0, 3]
     }
 }
 
@@ -253,7 +254,7 @@ export function createLatePaymentNote(data = {}) {
                 margin: [0, 2, 0, 0]
             }
         ],
-        margin: [0, 5, 0, 15]
+        margin: [0, 3, 0, 8]
     }
 }
 
@@ -271,13 +272,13 @@ export function createPaymentMethods(data = {}) {
         billerIdNo = '099-4-00259063-3',
         referenceNo1 = '',
         referenceNo2 = '',
-        qrCodeBase64 = null,
+        qrCodeSvg = qrSvgRaw,
         financeEmail = 'finance@kingsbangkok.ac.th',
         bankFeeRate = '1.3%'
     } = data
 
     const stack = [
-        { text: 'Payment methods', style: 'paymentTitle', margin: [0, 0, 0, 8] }
+        { text: 'Payment methods', style: 'paymentTitle', margin: [0, 0, 0, 5] }
     ]
 
     // 1. Cheque
@@ -290,7 +291,7 @@ export function createPaymentMethods(data = {}) {
             }
         ],
         style: 'paymentText',
-        margin: [0, 0, 0, 8]
+        margin: [0, 0, 0, 5]
     })
 
     // 2. Bank Transfer
@@ -303,7 +304,7 @@ export function createPaymentMethods(data = {}) {
             }
         ],
         style: 'paymentText',
-        margin: [0, 0, 0, 5]
+        margin: [0, 0, 0, 3]
     })
 
     // Bank details table
@@ -325,7 +326,7 @@ export function createPaymentMethods(data = {}) {
             ])
         },
         layout: 'noBorders',
-        margin: [80, 0, 0, 8]
+        margin: [80, 0, 0, 5]
     })
 
     // 3. Bill Payment
@@ -333,7 +334,7 @@ export function createPaymentMethods(data = {}) {
     stack.push({
         text: [{ text: '-  ' }, { text: billPaymentText }],
         style: 'paymentText',
-        margin: [0, 0, 0, 5]
+        margin: [0, 0, 0, 3]
     })
 
     // Bill payment details + QR code
@@ -360,17 +361,22 @@ export function createPaymentMethods(data = {}) {
         ]
     }
 
-    // Add QR code if provided
-    if (qrCodeBase64) {
+    // Add QR code SVG
+    if (qrCodeSvg) {
         billContent.columns.push({
-            width: 80,
-            image: qrCodeBase64,
-            fit: [75, 75],
-            alignment: 'right'
+            width: 90,
+            stack: [
+                {
+                    svg: qrCodeSvg,
+                    fit: [50, 50],
+                    alignment: 'center'
+                }
+            ],
+            margin: [-300, -8, 0, 0] // adjust vertical position slightly higher to align with text
         })
     }
 
-    stack.push({ ...billContent, margin: [0, 0, 0, 8] })
+    stack.push({ ...billContent, margin: [0, 0, 0, 5] })
 
     // 4. Credit card
     stack.push({
@@ -384,7 +390,7 @@ export function createPaymentMethods(data = {}) {
         margin: [0, 0, 0, 0]
     })
 
-    return { stack, margin: [0, 0, 0, 20] }
+    return { stack, margin: [0, 0, 0, 10] }
 }
 
 // ---------------------------------------------------------------------------
@@ -432,7 +438,7 @@ export function createSignatureSection(data = {}) {
                 alignment: 'center'
             }
         ],
-        margin: [0, 40, 0, 0]
+        margin: [0, 20, 0, 0]
     }
 }
 
@@ -442,84 +448,84 @@ export function createSignatureSection(data = {}) {
 export function getBaseStyles() {
     return {
         schoolName: {
-            fontSize: 10,
+            fontSize: 9,
             bold: false,
             characterSpacing: 1.5,
             color: '#000000'
         },
         schoolLocation: {
-            fontSize: 9,
+            fontSize: 8,
             bold: false,
             characterSpacing: 1,
             color: '#000000'
         },
         addressText: {
-            fontSize: 7,
+            fontSize: 6.5,
             color: '#333333'
         },
         invoiceTitle: {
-            fontSize: 24,
+            fontSize: 22,
             bold: true,
             color: '#000000'
         },
         infoLabel: {
-            fontSize: 9,
+            fontSize: 8.5,
             color: '#000000'
         },
         infoValue: {
-            fontSize: 9,
+            fontSize: 8.5,
             color: '#000000'
         },
         tableHeader: {
-            fontSize: 9,
+            fontSize: 8.5,
             bold: false,
             color: '#000000'
         },
         tableCell: {
-            fontSize: 9,
+            fontSize: 8.5,
             color: '#000000'
         },
         totalWordsCell: {
-            fontSize: 9,
+            fontSize: 8,
             color: '#000000'
         },
         totalLabel: {
-            fontSize: 9,
+            fontSize: 8.5,
             bold: false,
             color: '#000000'
         },
         totalValue: {
-            fontSize: 9,
+            fontSize: 8.5,
             bold: false,
             color: '#000000'
         },
         noteText: {
-            fontSize: 7,
+            fontSize: 6.5,
             color: '#333333'
         },
         paymentTitle: {
-            fontSize: 10,
+            fontSize: 9,
             bold: true,
             color: '#000000'
         },
         paymentText: {
-            fontSize: 8,
+            fontSize: 7.5,
             color: '#000000'
         },
         bankDetailLabel: {
-            fontSize: 8,
+            fontSize: 7.5,
             color: '#000000'
         },
         bankDetailValue: {
-            fontSize: 8,
+            fontSize: 7.5,
             color: '#000000'
         },
         signatureName: {
-            fontSize: 9,
+            fontSize: 8.5,
             color: '#000000'
         },
         signatureLabel: {
-            fontSize: 9,
+            fontSize: 8.5,
             color: '#000000'
         }
     }

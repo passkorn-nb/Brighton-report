@@ -9,6 +9,7 @@ export default {
         return {
             reportTypes: [],
             selectedType: '',
+            selectedVariation: 'both',
             loading: false,
             error: ''
         }
@@ -29,7 +30,8 @@ export default {
             this.error = ''
 
             try {
-                const data = await fetchReportData(this.selectedType)
+                const params = this.selectedType === 'tuitionFee' ? { variation: this.selectedVariation } : {}
+                const data = await fetchReportData(this.selectedType, params)
                 const report = generateReport(this.selectedType, data)
                 report.download()
             } catch (err) {
@@ -46,7 +48,8 @@ export default {
             this.error = ''
 
             try {
-                const data = await fetchReportData(this.selectedType)
+                const params = this.selectedType === 'tuitionFee' ? { variation: this.selectedVariation } : {}
+                const data = await fetchReportData(this.selectedType, params)
                 const report = generateReport(this.selectedType, data)
                 report.open()
             } catch (err) {
@@ -59,6 +62,16 @@ export default {
         getSelectedLabel() {
             const found = this.reportTypes.find(r => r.value === this.selectedType)
             return found ? found.label : ''
+        },
+
+        getVariationLabel() {
+            const variations = {
+                standard: 'Standard (No Discounts)',
+                creditNote: 'With Credit Note',
+                sibling: 'With Sibling Discount',
+                both: 'With Credit Note & Sibling Discount'
+            }
+            return variations[this.selectedVariation] || 'Select variation'
         }
     }
 }
@@ -92,6 +105,21 @@ export default {
                             <SelectItem v-for="type in reportTypes" :key="type.value" :value="type.value">
                                 {{ type.label }}
                             </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div v-if="selectedType === 'tuitionFee'">
+                    <label class="block text-sm font-medium text-foreground mb-2">Mock Variation</label>
+                    <Select v-model="selectedVariation">
+                        <SelectTrigger class="w-full">
+                            <SelectValue :placeholder="getVariationLabel()" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="standard">Standard (No Discounts)</SelectItem>
+                            <SelectItem value="creditNote">With Credit Note</SelectItem>
+                            <SelectItem value="sibling">With Sibling Discount</SelectItem>
+                            <SelectItem value="both">With Credit Note & Sibling Discount</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

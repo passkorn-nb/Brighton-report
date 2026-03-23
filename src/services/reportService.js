@@ -23,11 +23,12 @@ const mockData = {
         items: [
             { description: 'Tuition fee - Term 3 / Year 8', amount: 279900 },
             { description: 'Registration fee waiver (3/3)', amount: -75000 },
+            { description: 'Credit note', amount: -15000 },
             { description: 'Second child sibling discount (2%)', amount: -5598 },
             { description: 'ID card charge', amount: 500 }
         ],
-        amountInWords: 'One Hundred And Ninety-Nine Thousand Eight Hundred And Two Baht Only',
-        totalAmount: 199802,
+        amountInWords: 'One Hundred Eighty-Four Thousand Eight Hundred And Two Baht Only',
+        totalAmount: 184802,
         paymentMethods: {
             referenceNo1: '101848',
             referenceNo2: '202501669'
@@ -254,7 +255,28 @@ export async function fetchReportData(reportType, _params = {}) {
         throw new Error(`No mock data available for report type: ${reportType}`)
     }
 
-    return structuredClone(data)
+    const clonedData = structuredClone(data)
+
+    if (reportType === 'tuitionFee') {
+        const variation = _params.variation || 'both'
+        if (variation === 'standard') {
+            clonedData.items = clonedData.items.filter(item => !item.description.includes('Credit note') && !item.description.includes('sibling discount'))
+            clonedData.amountInWords = 'Two Hundred Five Thousand Four Hundred Baht Only'
+            clonedData.totalAmount = 205400
+        } else if (variation === 'creditNote') {
+            clonedData.items = clonedData.items.filter(item => !item.description.includes('sibling discount'))
+            clonedData.amountInWords = 'One Hundred Ninety Thousand Four Hundred Baht Only'
+            clonedData.totalAmount = 190400
+        } else if (variation === 'sibling') {
+            clonedData.items = clonedData.items.filter(item => !item.description.includes('Credit note'))
+            clonedData.amountInWords = 'One Hundred Ninety-Nine Thousand Eight Hundred And Two Baht Only'
+            clonedData.totalAmount = 199802
+        } else if (variation === 'both') {
+            // keep all, use default amounts
+        }
+    }
+
+    return clonedData
 }
 
 /**
