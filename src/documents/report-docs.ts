@@ -8,7 +8,7 @@ export const ListReportTypesEntity = {
     }
 }
 
-export const GenerateReportEntity = {
+export const GenerateReportEntity: any = {
     detail: {
         summary: 'Generate PDF Report',
         description: 'Generates a PDF invoice report based on the specified report type and data',

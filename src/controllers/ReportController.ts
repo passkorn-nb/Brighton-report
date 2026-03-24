@@ -19,7 +19,7 @@ export const generatePdfReport = async (ctx: ContextV2) => {
     const tag = `[${ctx.requestId}] (RC-02)`
     try {
         const { reportType, data } = ctx.body as { reportType: string; data: any }
-        const base64 = (ctx.query as Record<string, string>)?.base64 === 'true'
+        const base64 = ctx.query.base64 === 'true'
 
         if (!reportType) {
             return ResponseSend.error(ctx, 'reportType is required', 400)
