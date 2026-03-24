@@ -33,6 +33,13 @@ export function generateReport(reportType: string, data: any) {
         },
         getBase64(): Promise<string> {
             return pdfDoc.getBase64()
+        },
+        getBufferWithProgress(onProgress: (percentage: number) => void): Promise<Buffer> {
+            pdfMake.setProgressCallback(onProgress)
+            const pdfDocWithProgress = pdfMake.createPdf(docDefinition)
+            return (pdfDocWithProgress.getBuffer() as Promise<Buffer>).finally(() => {
+                pdfMake.setProgressCallback(undefined as any)
+            })
         }
     }
 }

@@ -17,6 +17,9 @@ export const GenerateReportEntity: any = {
     query: t.Object({
         base64: t.Optional(
             t.Boolean({ description: 'If true, returns the PDF as a base64 string instead of a file download' })
+        ),
+        stream: t.Optional(
+            t.Boolean({ description: 'If true, returns a stream of progress updates and the final PDF as base64' })
         )
     }),
     body: t.Object({

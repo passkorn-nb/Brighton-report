@@ -19,7 +19,6 @@ export const generatePdfReport = async (ctx: ContextV2) => {
     const tag = `[${ctx.requestId}] (RC-02)`
     try {
         const { reportType, data } = ctx.body as { reportType: ReportType; data: any }
-        const base64 = ctx.query.base64 === 'true'
 
         if (!reportType) {
             return ResponseSend.error(ctx, 'reportType is required', 400)
@@ -31,7 +30,34 @@ export const generatePdfReport = async (ctx: ContextV2) => {
 
         const report = generateReport(reportType, data || {})
 
-        if (base64) {
+        if (ctx.query.stream) {
+            const encoder = new TextEncoder()
+            const readable = new ReadableStream({
+                async start(controller) {
+                    const send = (event: object) => {
+                        controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`))
+                    }
+                    try {
+                        const buffer = await report.getBufferWithProgress(percentage => {
+                            send({ type: 'progress', percentage: Math.round(percentage * 100) })
+                        })
+                        send({ type: 'done', base64: buffer.toString('base64') })
+                    } catch (e: any) {
+                        send({ type: 'error', message: e.message })
+                    }
+                    controller.close()
+                }
+            })
+            return new Response(readable, {
+                headers: {
+                    'Content-Type': 'text/event-stream',
+                    'Cache-Control': 'no-cache',
+                    Connection: 'keep-alive'
+                }
+            })
+        }
+
+        if (ctx.query.base64) {
             const b64 = await report.getBase64()
             return ResponseSend.success(ctx, 'Report generated successfully', { base64: b64 })
         }
