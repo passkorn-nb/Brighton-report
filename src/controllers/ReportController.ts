@@ -1,6 +1,6 @@
 import { ContextV2 } from '@interfaces/InternalService'
 import { generateReport, getReportTypes } from '@utils/PDFGenerator'
-import { getReportBuilder } from '@utils/PDFStructor'
+import { getReportBuilder, ReportType } from '@utils/PDFStructor'
 import { HttpStatusCode } from 'axios'
 
 export const listReportTypes = async (ctx: ContextV2) => {
@@ -18,7 +18,7 @@ export const listReportTypes = async (ctx: ContextV2) => {
 export const generatePdfReport = async (ctx: ContextV2) => {
     const tag = `[${ctx.requestId}] (RC-02)`
     try {
-        const { reportType, data } = ctx.body as { reportType: string; data: any }
+        const { reportType, data } = ctx.body as { reportType: ReportType; data: any }
         const base64 = ctx.query.base64 === 'true'
 
         if (!reportType) {

@@ -13,7 +13,7 @@ Content-Type: application/json
 
 ```json
 {
-    "reportType": "tuitionFee",
+    "reportType": "TUITION_FEE",
     "data": {
         "studentInfo": {
             "studentId": "000000",
@@ -53,7 +53,7 @@ Content-Type: application/json
 
 ```json
 {
-    "reportType": "examFee",
+    "reportType": "EXAM_FEE",
     "data": {
         "studentInfo": {
             "studentId": "000000",
@@ -94,7 +94,7 @@ Content-Type: application/json
 
 ```json
 {
-    "reportType": "schoolBus",
+    "reportType": "SCHOOL_BUS",
     "data": {
         "studentInfo": {
             "studentId": "000000",
@@ -131,7 +131,7 @@ Content-Type: application/json
 
 ```json
 {
-    "reportType": "schoolTrip",
+    "reportType": "SCHOOL_TRIP",
     "data": {
         "studentInfo": {
             "studentId": "000000",
@@ -165,7 +165,7 @@ Content-Type: application/json
 
 ```json
 {
-    "reportType": "eca",
+    "reportType": "ECA",
     "data": {
         "studentInfo": {
             "studentId": "000000",
@@ -205,7 +205,7 @@ Content-Type: application/json
 
 ```json
 {
-    "reportType": "holidayCamp",
+    "reportType": "HOLIDAY_CAMP",
     "data": {
         "studentInfo": {
             "studentId": "000000",
@@ -243,7 +243,7 @@ Content-Type: application/json
 
 ```json
 {
-    "reportType": "holidayCampExternal",
+    "reportType": "HOLIDAY_CAMP_EXTERNAL",
     "data": {
         "studentInfo": {
             "studentName": "Aaaaa Bbbbb",
@@ -278,7 +278,7 @@ Content-Type: application/json
 
 ```json
 {
-    "reportType": "studentActivities",
+    "reportType": "STUDENT_ACTIVITIES",
     "data": {
         "studentInfo": {
             "studentId": "000000",

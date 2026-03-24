@@ -7,48 +7,59 @@ import { buildHolidayCampReport } from './holidayCampReport'
 import { buildHolidayCampExternalReport } from './holidayCampExternalReport'
 import { buildStudentActivitiesReport } from './studentActivitiesReport'
 
+export enum ReportType {
+    TUITION_FEE = 'TUITION_FEE',
+    EXAM_FEE = 'EXAM_FEE',
+    SCHOOL_BUS = 'SCHOOL_BUS',
+    SCHOOL_TRIP = 'SCHOOL_TRIP',
+    ECA = 'ECA',
+    HOLIDAY_CAMP = 'HOLIDAY_CAMP',
+    HOLIDAY_CAMP_EXTERNAL = 'HOLIDAY_CAMP_EXTERNAL',
+    STUDENT_ACTIVITIES = 'STUDENT_ACTIVITIES'
+}
+
 /**
  * Registry of available KCIS invoice report types.
  * Each entry maps a key to a label, description, and builder function.
  */
 export const REPORT_TYPES: Record<string, { label: string; description: string; builder: (data?: any) => any }> = {
-    tuitionFee: {
+    [ReportType.TUITION_FEE]: {
         label: 'Tuition Fee',
         description:
             'Tuition fee invoice with registration waivers, sibling discounts, credit notes, and ID card charges',
         builder: buildTuitionFeeReport
     },
-    examFee: {
+    [ReportType.EXAM_FEE]: {
         label: 'Examination Fee',
         description: 'Examination fee invoice',
         builder: buildExamFeeReport
     },
-    schoolBus: {
+    [ReportType.SCHOOL_BUS]: {
         label: 'School Bus',
         description: 'School bus service fee invoice with route information',
         builder: buildSchoolBusReport
     },
-    schoolTrip: {
+    [ReportType.SCHOOL_TRIP]: {
         label: 'School Trip',
         description: 'School trip fee invoice with trip details (residential trips)',
         builder: buildSchoolTripReport
     },
-    eca: {
+    [ReportType.ECA]: {
         label: 'ECA Sport & Music',
         description: 'Extra-curricular activities invoice for sport and music (gymnastics, basketball, piano, etc.)',
         builder: buildEcaReport
     },
-    holidayCamp: {
+    [ReportType.HOLIDAY_CAMP]: {
         label: "Holiday Camp (King's Student)",
         description: "Holiday camp invoice for King's College students with early bird discounts",
         builder: buildHolidayCampReport
     },
-    holidayCampExternal: {
+    [ReportType.HOLIDAY_CAMP_EXTERNAL]: {
         label: 'Holiday Camp (External Student)',
         description: 'Holiday camp invoice for external students (simplified layout)',
         builder: buildHolidayCampExternalReport
     },
-    studentActivities: {
+    [ReportType.STUDENT_ACTIVITIES]: {
         label: 'Student Activities',
         description: 'Student activities invoice (e.g. tournaments, competitions)',
         builder: buildStudentActivitiesReport
