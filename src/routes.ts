@@ -3,6 +3,7 @@ import { HttpStatusCode } from 'axios'
 
 import { ContextV2 } from '@interfaces/InternalService'
 import timer from '@middlewares/Timer'
+import { listReportTypes, generatePdfReport } from '@controllers/ReportController'
 
 import * as Docs from '@documents'
 
@@ -22,6 +23,10 @@ export default new Elysia()
 
     .get('/', serviceInfo, Docs.ServiceInfoEntity)
     .head('/heartbeat', () => status(200), Docs.HealthCheckEntity)
+
+    // [Report Routes]
+    .get('/report/types', listReportTypes, Docs.ListReportTypesEntity)
+    .post('/report/generate', generatePdfReport, Docs.GenerateReportEntity)
 
     // [Fallback Route] - Handle all other routes
     .all('*', () => `You have no permission to access this content. | API Version (${globalThis.version}) ⛔`, {

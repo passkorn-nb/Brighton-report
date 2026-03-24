@@ -45,3 +45,4 @@ bun.lock
 .env
 tmp
 logs
+mock
