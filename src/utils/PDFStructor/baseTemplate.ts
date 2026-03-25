@@ -264,7 +264,7 @@ export function createPaymentMethods(data: any = {}) {
         billerIdNo = '099-4-00259063-3',
         referenceNo1 = '',
         referenceNo2 = '',
-        qrCodeSvg = '',
+        qrCodeBase64 = '',
         financeEmail = 'finance@kingsbangkok.ac.th',
         bankFeeRate = '1.3%'
     } = data
@@ -351,13 +351,13 @@ export function createPaymentMethods(data: any = {}) {
         ]
     }
 
-    // Add QR code SVG
-    if (qrCodeSvg) {
+    // Add QR code image (base64)
+    if (qrCodeBase64) {
         billContent.columns.push({
             width: 90,
             stack: [
                 {
-                    svg: qrCodeSvg,
+                    image: qrCodeBase64,
                     fit: [50, 50],
                     alignment: 'center'
                 }
