@@ -6,6 +6,7 @@ import { buildEcaReport } from './ecaReport'
 import { buildHolidayCampReport } from './holidayCampReport'
 import { buildHolidayCampExternalReport } from './holidayCampExternalReport'
 import { buildStudentActivitiesReport } from './studentActivitiesReport'
+import { buildReceiptReport } from './receiptReport'
 
 export enum ReportType {
     TUITION_FEE = 'TUITION_FEE',
@@ -15,7 +16,8 @@ export enum ReportType {
     ECA = 'ECA',
     HOLIDAY_CAMP = 'HOLIDAY_CAMP',
     HOLIDAY_CAMP_EXTERNAL = 'HOLIDAY_CAMP_EXTERNAL',
-    STUDENT_ACTIVITIES = 'STUDENT_ACTIVITIES'
+    STUDENT_ACTIVITIES = 'STUDENT_ACTIVITIES',
+    RECEIPT = 'RECEIPT'
 }
 
 /**
@@ -63,6 +65,11 @@ export const REPORT_TYPES: Record<string, { label: string; description: string; 
         label: 'Student Activities',
         description: 'Student activities invoice (e.g. tournaments, competitions)',
         builder: buildStudentActivitiesReport
+    },
+    [ReportType.RECEIPT]: {
+        label: 'Receipt',
+        description: 'Payment receipt with invoice/credit-note breakdown, overpayment, and signatures',
+        builder: buildReceiptReport
     }
 }
 
