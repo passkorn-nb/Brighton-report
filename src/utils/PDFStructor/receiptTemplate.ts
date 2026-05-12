@@ -44,11 +44,11 @@ export function createReceiptHeader(data: any = {}) {
     const stack: any[] = []
 
     if (logo) {
-        stack.push({ image: logo, fit: [55, 55], alignment: 'center', margin: [0, 0, 0, 4] })
+        stack.push({ image: logo, fit: [70, 70], alignment: 'center', margin: [0, 0, 0, 6] })
     }
-    stack.push({ text: schoolName, style: 'schoolName', alignment: 'center' })
-    stack.push({ text: schoolLocation, style: 'schoolLocation', alignment: 'center', margin: [0, 0, 0, 10] })
-    stack.push({ text: 'RECEIPT', style: 'receiptTitle', alignment: 'center', margin: [0, 0, 0, 10] })
+    stack.push({ text: schoolName, style: 'receiptSchoolName', alignment: 'center' })
+    stack.push({ text: schoolLocation, style: 'receiptSchoolLocation', alignment: 'center', margin: [0, 2, 0, 14] })
+    stack.push({ text: 'RECEIPT', style: 'receiptTitle', alignment: 'center', margin: [0, 0, 0, 14] })
 
     return { stack }
 }
@@ -84,16 +84,16 @@ export function createReceiptInfoBox(data: any = {}) {
         const left = leftRows[i] || ['', '']
         const right = rightRows[i] || ['', '']
         body.push([
-            { text: left[0], style: 'infoLabel', border: [false, false, false, false] },
-            { text: left[1], style: 'infoValue', border: [false, false, false, false] },
-            { text: right[0], style: 'infoLabel', border: [false, false, false, false] },
-            { text: right[1], style: 'infoValue', border: [false, false, false, false], alignment: 'right' }
+            { text: left[0], style: 'infoLabel' },
+            { text: left[1], style: 'infoValue' },
+            { text: right[0], style: 'infoLabel' },
+            { text: right[1], style: 'infoValue', alignment: 'right', noWrap: true }
         ])
     }
 
     return {
         table: {
-            widths: [70, '*', 65, 'auto'],
+            widths: [70, '*', 70, 85],
             body
         },
         layout: {
@@ -167,20 +167,20 @@ export function createReceiptItemsTable(items: any[] = [], options: any = {}) {
 
     const totalRow: any[] = [
         {
-            text: amountInWords || '',
+            text: (amountInWords || '').toUpperCase(),
             style: 'totalWordsCell',
             bold: true,
             colSpan: 3,
-            border: [true, true, false, true]
+            border: [true, true, true, true]
         },
         {},
         {},
         {
             columns: [
                 { text: 'TOTAL', style: 'totalLabel', bold: true, width: 'auto' },
-                { text: formatCurrency(total), style: 'totalValue', width: '*', alignment: 'right' }
+                { text: formatCurrency(total), style: 'totalValue', bold: true, width: '*', alignment: 'right' }
             ],
-            border: [false, true, true, true]
+            border: [true, true, true, true]
         }
     ]
 
@@ -198,7 +198,7 @@ export function createReceiptItemsTable(items: any[] = [], options: any = {}) {
                 if (overpaymentAmount && Number(overpaymentAmount) > 0 && i === node.table.body.length - 2) return 1
                 return 0
             },
-            vLineWidth: (i: number, node: any) => (i === 0 || i === node.table.widths.length ? 1 : 0),
+            vLineWidth: () => 1,
             hLineColor: () => '#000000',
             vLineColor: () => '#000000',
             paddingLeft: () => 6,
@@ -342,8 +342,18 @@ export function createReceiptFooter(data: any = {}) {
 export function getReceiptStyles() {
     return {
         ...getBaseStyles(),
+        receiptSchoolName: {
+            fontSize: 13,
+            characterSpacing: 2,
+            color: '#000000'
+        },
+        receiptSchoolLocation: {
+            fontSize: 8.5,
+            characterSpacing: 3,
+            color: '#000000'
+        },
         receiptTitle: {
-            fontSize: 22,
+            fontSize: 26,
             bold: true,
             color: '#000000'
         },
