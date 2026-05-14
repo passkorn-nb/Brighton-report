@@ -145,7 +145,7 @@ export function createReceiptItemsTable(items: any[] = [], options: any = {}) {
     const cnRows: any[] = (creditNotes as any[]).map((cn: any) => [
         { text: '', style: 'tableCell', alignment: 'center' },
         { text: cn.cnNumber || '', style: 'tableCell', alignment: 'center' },
-        { text: 'Credit note applied', style: 'tableCell', alignment: 'center' },
+        { text: cn.issueDate || 'Credit note applied', style: 'tableCell', alignment: 'center' },
         { text: `(${formatCurrency(Math.abs(Number(cn.amount || 0)))})`, style: 'tableCell', alignment: 'right' }
     ])
 
