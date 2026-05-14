@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import dayjs from 'dayjs'
 
-const LOGO_PATH = path.resolve(path.dirname(process.argv[1]), '..', 'src/assets/images/kcis-logo.png')
+const LOGO_PATH = path.resolve(process.cwd(), 'src/assets/images/kcis-logo.png')
 let cachedLogo: string | null | undefined
 
 function loadLogoBase64(): string | null {
