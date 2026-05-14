@@ -132,22 +132,23 @@ export function createReceiptItemsTable(items: any[] = [], options: any = {}) {
         { text: formatReceiptAmount(item.receivedAmount), alignment: 'right', style: 'tableCell' }
     ])
 
-    const emptyCount = Math.max(0, minRows - items.length - creditNotes.length)
-    for (let i = 0; i < emptyCount; i++) {
-        bodyRows.push([
-            { text: '', style: 'tableCell' },
-            { text: '', style: 'tableCell' },
-            { text: '', style: 'tableCell' },
-            { text: '', style: 'tableCell' }
-        ])
-    }
-
     const cnRows: any[] = (creditNotes as any[]).map((cn: any) => [
         { text: '', style: 'tableCell', alignment: 'center' },
         { text: cn.cnNumber || '', style: 'tableCell', alignment: 'center' },
         { text: cn.issueDate || 'Credit note applied', style: 'tableCell', alignment: 'center' },
         { text: `(${formatCurrency(Math.abs(Number(cn.amount || 0)))})`, style: 'tableCell', alignment: 'right' }
     ])
+
+    const emptyCount = Math.max(0, minRows - items.length - creditNotes.length)
+    const emptyRows: any[] = []
+    for (let i = 0; i < emptyCount; i++) {
+        emptyRows.push([
+            { text: '', style: 'tableCell' },
+            { text: '', style: 'tableCell' },
+            { text: '', style: 'tableCell' },
+            { text: '', style: 'tableCell' }
+        ])
+    }
 
     const extraRows: any[] = []
     if (overpaymentAmount && Number(overpaymentAmount) > 0) {
@@ -193,7 +194,7 @@ export function createReceiptItemsTable(items: any[] = [], options: any = {}) {
         table: {
             headerRows: 1,
             widths,
-            body: [headerRow, ...bodyRows, ...cnRows, ...extraRows, totalRow]
+            body: [headerRow, ...bodyRows, ...cnRows, ...emptyRows, ...extraRows, totalRow]
         },
         layout: {
             hLineWidth: (i: number, node: any) => {
