@@ -136,7 +136,7 @@ export function createReceiptItemsTable(items: any[] = [], options: any = {}) {
         { text: '', style: 'tableCell', alignment: 'center' },
         { text: cn.cnNumber || '', style: 'tableCell', alignment: 'center' },
         { text: cn.issueDate || 'Credit note applied', style: 'tableCell', alignment: 'center' },
-        { text: `(${formatCurrency(Math.abs(Number(cn.amount || 0)))})`, style: 'tableCell', alignment: 'right' }
+        { text: `-${formatCurrency(Math.abs(Number(cn.amount || 0)))}`, style: 'tableCell', alignment: 'right' }
     ])
 
     const emptyCount = Math.max(0, minRows - items.length - creditNotes.length)
