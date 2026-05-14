@@ -3,7 +3,7 @@ import pdfMake from 'pdfmake'
 import { getReportBuilder, getReportTypes as getTypes } from './PDFStructor'
 
 // Server-side font setup for pdfmake (using local fonts in assets/fonts)
-const fontsDir = path.resolve(__dirname, '../assets/fonts')
+const fontsDir = path.resolve(path.dirname(process.argv[1]), '..', 'src/assets/fonts')
 pdfMake.addFonts({
     Roboto: {
         normal: path.join(fontsDir, 'Roboto-Regular.ttf'),

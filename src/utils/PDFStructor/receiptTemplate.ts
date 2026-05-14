@@ -3,16 +3,18 @@ import path from 'path'
 import dayjs from 'dayjs'
 import { formatCurrency, getBaseStyles } from './baseTemplate'
 
-const LOGO_PATH = path.resolve(__dirname, '../../assets/images/kcis-logo.png')
+const LOGO_PATH = path.resolve(path.dirname(process.argv[1]), '..', 'src/assets/images/kcis-logo.png')
 let cachedLogo: string | null | undefined
 
 function loadLogoBase64(): string | null {
     if (cachedLogo !== undefined) return cachedLogo
     try {
         if (fs.existsSync(LOGO_PATH)) {
+            logger.info(`Loading logo from ${LOGO_PATH}`)
             const buf = fs.readFileSync(LOGO_PATH)
             cachedLogo = `data:image/png;base64,${buf.toString('base64')}`
         } else {
+            logger.warn(`Logo file not found at ${LOGO_PATH}, logo will be omitted from receipts`)
             cachedLogo = null
         }
     } catch {
@@ -34,13 +36,9 @@ function valueOrDash(value: any): string {
 }
 
 export function createReceiptHeader(data: any = {}) {
-    const {
-        schoolName = "KING'S COLLEGE INTERNATIONAL SCHOOL",
-        schoolLocation = 'BANGKOK',
-        logoBase64
-    } = data
+    const { schoolName = "KING'S COLLEGE INTERNATIONAL SCHOOL", schoolLocation = 'BANGKOK', logoBase64 } = data
 
-    const logo = logoBase64 || loadLogoBase64()
+    const logo = loadLogoBase64()
     const stack: any[] = []
 
     if (logo) {
@@ -266,11 +264,7 @@ export function createReceiptNotes() {
 }
 
 export function createReceiptSignatures(data: any = {}) {
-    const {
-        collectorName = '',
-        authorisedSignature = '',
-        authorisedTitle = 'Head of Finance and Accounting'
-    } = data
+    const { collectorName = '', authorisedSignature = '', authorisedTitle = 'Head of Finance and Accounting' } = data
 
     return {
         columns: [

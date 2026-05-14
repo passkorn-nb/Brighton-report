@@ -1,4 +1,24 @@
+import fs from 'fs'
+import path from 'path'
 import dayjs from 'dayjs'
+
+const LOGO_PATH = path.resolve(path.dirname(process.argv[1]), '..', 'src/assets/images/kcis-logo.png')
+let cachedLogo: string | null | undefined
+
+function loadLogoBase64(): string | null {
+    if (cachedLogo !== undefined) return cachedLogo
+    try {
+        if (fs.existsSync(LOGO_PATH)) {
+            const buf = fs.readFileSync(LOGO_PATH)
+            cachedLogo = `data:image/png;base64,${buf.toString('base64')}`
+        } else {
+            cachedLogo = null
+        }
+    } catch {
+        cachedLogo = null
+    }
+    return cachedLogo
+}
 
 /**
  * Shared base template elements for all KCIS invoice report types.
@@ -14,18 +34,23 @@ export function createHeader(data: any = {}) {
         schoolName = "KING'S COLLEGE INTERNATIONAL SCHOOL",
         schoolLocation = 'BANGKOK',
         address = '727 Ratchadapisek Road, Bang Phongphang, Yannawa, Bangkok 10120, Thailand',
-        contactLine = '+66 (0) 2481 9955, finance@kingsbangkok.ac.th, www.kingsbangkok.ac.th'
+        contactLine = '+66 (0) 2481 9955, finance@kingsbangkok.ac.th, www.kingsbangkok.ac.th',
+        logoBase64
     } = data
 
-    return {
-        stack: [
-            { text: schoolName, style: 'schoolName', alignment: 'center' },
-            { text: schoolLocation, style: 'schoolLocation', alignment: 'center', margin: [0, 0, 0, 1] },
-            { text: address, style: 'addressText', alignment: 'center' },
-            { text: contactLine, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 8] },
-            { text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, 0, 0, 8] }
-        ]
+    const logo = logoBase64 || loadLogoBase64()
+    const stack: any[] = []
+
+    if (logo) {
+        stack.push({ image: logo, fit: [70, 70], alignment: 'center', margin: [0, 0, 0, 6] })
     }
+    stack.push({ text: schoolName, style: 'schoolName', alignment: 'center' })
+    stack.push({ text: schoolLocation, style: 'schoolLocation', alignment: 'center', margin: [0, 0, 0, 1] })
+    stack.push({ text: address, style: 'addressText', alignment: 'center' })
+    stack.push({ text: contactLine, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 8] })
+    stack.push({ text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, 0, 0, 8] })
+
+    return { stack }
 }
 
 // ---------------------------------------------------------------------------
