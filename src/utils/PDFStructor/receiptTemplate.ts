@@ -109,7 +109,7 @@ export function createReceiptInfoBox(data: any = {}) {
 }
 
 export function createReceiptItemsTable(items: any[] = [], options: any = {}) {
-    const { overpaymentAmount = 0, totalAmount = null, amountInWords = '', minRows = 6 } = options
+    const { overpaymentAmount = 0, totalAmount = null, amountInWords = '', minRows = 6, creditNotes = [] } = options
 
     const total =
         totalAmount != null
@@ -132,7 +132,7 @@ export function createReceiptItemsTable(items: any[] = [], options: any = {}) {
         { text: formatReceiptAmount(item.receivedAmount), alignment: 'right', style: 'tableCell' }
     ])
 
-    const emptyCount = Math.max(0, minRows - items.length)
+    const emptyCount = Math.max(0, minRows - items.length - creditNotes.length)
     for (let i = 0; i < emptyCount; i++) {
         bodyRows.push([
             { text: '', style: 'tableCell' },
@@ -141,6 +141,13 @@ export function createReceiptItemsTable(items: any[] = [], options: any = {}) {
             { text: '', style: 'tableCell' }
         ])
     }
+
+    const cnRows: any[] = (creditNotes as any[]).map((cn: any) => [
+        { text: '', style: 'tableCell', alignment: 'center' },
+        { text: cn.cnNumber || '', style: 'tableCell', alignment: 'center' },
+        { text: 'Credit note applied', style: 'tableCell', alignment: 'center' },
+        { text: `(${formatCurrency(Math.abs(Number(cn.amount || 0)))})`, style: 'tableCell', alignment: 'right' }
+    ])
 
     const extraRows: any[] = []
     if (overpaymentAmount && Number(overpaymentAmount) > 0) {
@@ -186,7 +193,7 @@ export function createReceiptItemsTable(items: any[] = [], options: any = {}) {
         table: {
             headerRows: 1,
             widths,
-            body: [headerRow, ...bodyRows, ...extraRows, totalRow]
+            body: [headerRow, ...bodyRows, ...cnRows, ...extraRows, totalRow]
         },
         layout: {
             hLineWidth: (i: number, node: any) => {
