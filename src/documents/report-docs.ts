@@ -27,3 +27,20 @@ export const GenerateReportEntity: any = {
         data: t.Optional(t.Any({ description: 'Report data matching the template shape' }))
     })
 }
+
+export const GenerateBatchReportEntity: any = {
+    detail: {
+        summary: 'Generate Batch PDF Report',
+        description: 'Generates a single PDF containing one invoice page per student, merged by the report service',
+        tags: ['Report']
+    },
+    body: t.Object({
+        invoices: t.Array(
+            t.Object({
+                reportType: t.String({ description: 'Report type key' }),
+                data: t.Optional(t.Any({ description: 'Report data for this invoice' }))
+            }),
+            { description: 'Array of invoice report requests to merge into one PDF' }
+        )
+    })
+}

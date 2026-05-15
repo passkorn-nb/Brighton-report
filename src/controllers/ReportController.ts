@@ -1,5 +1,5 @@
 import { ContextV2 } from '@interfaces/InternalService'
-import { generateReport, getReportTypes } from '@utils/PDFGenerator'
+import { generateReport, generateBatchReport, getReportTypes } from '@utils/PDFGenerator'
 import { getReportBuilder, ReportType } from '@utils/PDFStructor'
 import { HttpStatusCode } from 'axios'
 
@@ -72,6 +72,40 @@ export const generatePdfReport = async (ctx: ContextV2) => {
         })
     } catch (error: any) {
         const msg = `Failed to generate report: ${error}`
+        logger.error(`${tag} error: ${error.message}`)
+        return ResponseSend.error(ctx, msg, HttpStatusCode.InternalServerError)
+    }
+}
+
+export const generateBatchPdfReport = async (ctx: ContextV2) => {
+    const tag = `[${ctx.requestId}] (RC-03)`
+    try {
+        const { invoices } = ctx.body as { invoices: Array<{ reportType: ReportType; data: any }> }
+
+        if (!Array.isArray(invoices) || invoices.length === 0) {
+            return ResponseSend.error(ctx, 'invoices array is required and must not be empty', 400)
+        }
+
+        for (const inv of invoices) {
+            if (!inv.reportType) {
+                return ResponseSend.error(ctx, 'Each invoice must have a reportType', 400)
+            }
+            if (!getReportBuilder(inv.reportType)) {
+                return ResponseSend.error(ctx, `Unknown report type: ${inv.reportType}`, 400)
+            }
+        }
+
+        const report = generateBatchReport(invoices)
+        const buffer = await report.getBuffer()
+
+        return new Response(buffer as unknown as ReadableStream, {
+            headers: {
+                'Content-Type': 'application/pdf',
+                'Content-Disposition': `inline; filename="invoice-preview-batch-${Date.now()}.pdf"`
+            }
+        })
+    } catch (error: any) {
+        const msg = `Failed to generate batch report: ${error}`
         logger.error(`${tag} error: ${error.message}`)
         return ResponseSend.error(ctx, msg, HttpStatusCode.InternalServerError)
     }

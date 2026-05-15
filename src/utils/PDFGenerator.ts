@@ -44,6 +44,53 @@ export function generateReport(reportType: string, data: any) {
     }
 }
 
+/**
+ * Generate a single PDF that combines multiple invoices (one page per invoice).
+ * Each invoice after the first starts on a new page via pdfmake's pageBreak.
+ */
+export function generateBatchReport(invoices: Array<{ reportType: string; data: any }>) {
+    if (invoices.length === 0) throw new Error('invoices array must not be empty')
+
+    const combinedContent: any[] = []
+
+    for (let i = 0; i < invoices.length; i++) {
+        const { reportType, data } = invoices[i]
+        const builder = getReportBuilder(reportType)
+        if (!builder) throw new Error(`Unknown report type: ${reportType}`)
+
+        const docDef = builder(data)
+        const contentItems: any[] = Array.isArray(docDef.content) ? docDef.content : [docDef.content]
+
+        if (i > 0 && contentItems.length > 0) {
+            // Force the first element of each subsequent invoice onto a new page
+            const first = { ...contentItems[0], pageBreak: 'before' }
+            combinedContent.push(first, ...contentItems.slice(1))
+        } else {
+            combinedContent.push(...contentItems)
+        }
+    }
+
+    // Use the first invoice's document settings (page size, margins, styles) as the base
+    const firstBuilder = getReportBuilder(invoices[0].reportType)!
+    const baseDoc = firstBuilder(invoices[0].data)
+
+    const mergedDoc = {
+        ...baseDoc,
+        content: combinedContent
+    }
+
+    const pdfDoc = pdfMake.createPdf(mergedDoc)
+
+    return {
+        getBuffer(): Promise<Buffer> {
+            return pdfDoc.getBuffer()
+        },
+        getBase64(): Promise<string> {
+            return pdfDoc.getBase64()
+        }
+    }
+}
+
 export function getReportTypes() {
     return getTypes()
 }

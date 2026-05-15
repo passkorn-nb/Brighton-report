@@ -3,7 +3,7 @@ import { HttpStatusCode } from 'axios'
 
 import { ContextV2 } from '@interfaces/InternalService'
 import timer from '@middlewares/Timer'
-import { listReportTypes, generatePdfReport } from '@controllers/ReportController'
+import { listReportTypes, generatePdfReport, generateBatchPdfReport } from '@controllers/ReportController'
 
 import * as Docs from '@documents'
 
@@ -27,6 +27,7 @@ export default new Elysia()
     // [Report Routes]
     .get('/report/types', listReportTypes, Docs.ListReportTypesEntity)
     .post('/report/generate', generatePdfReport, Docs.GenerateReportEntity)
+    .post('/report/generate-batch', generateBatchPdfReport, Docs.GenerateBatchReportEntity)
 
     // [Fallback Route] - Handle all other routes
     .all('*', () => `You have no permission to access this content. | API Version (${globalThis.version}) ⛔`, {
