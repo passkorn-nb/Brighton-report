@@ -185,7 +185,10 @@ export function createFeeTable(items: any[] = [], options: any = {}) {
         if (showNo) {
             row.push({ text: String(index + 1), alignment: 'center', style: 'tableCell' })
         }
-        row.push({ text: item.description || '', style: 'tableCell' })
+        const cellStack: any[] = []
+        if (item.name) cellStack.push({ text: item.name, style: 'tableCell' })
+        if (item.description) cellStack.push({ text: item.description, style: 'tableCellSubtext', margin: [0, 1, 0, 0] })
+        row.push(cellStack.length === 0 ? { text: '', style: 'tableCell' } : { stack: cellStack })
         row.push({ text: formatCurrency(item.amount), alignment: 'right', style: 'tableCell' })
         return row
     })
@@ -495,6 +498,11 @@ export function getBaseStyles() {
         tableCell: {
             fontSize: 8.5,
             color: '#000000'
+        },
+        tableCellSubtext: {
+            fontSize: 7.5,
+            italics: true,
+            color: '#666666'
         },
         totalWordsCell: {
             fontSize: 8,
