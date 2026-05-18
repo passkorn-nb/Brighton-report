@@ -27,6 +27,7 @@ export function buildStudentActivitiesReport(data: any = {}) {
     return buildDocDefinition({
         header,
         studentInfo,
-        content: [feeTable, latePaymentNote, paymentMethods, signature]
+        content: [feeTable, latePaymentNote, paymentMethods, signature],
+        headerData: data.header
     })
 }

@@ -1,19 +1,19 @@
 import {
-    createHeader,
+    createHeaderLegacy,
     createStudentInfoExternal,
     createFeeTableNoNumber,
-    createPaymentMethods,
-    createSignatureSection,
-    buildDocDefinition
+    createPaymentMethodsLegacy,
+    createSignatureSectionLegacy,
+    buildDocDefinitionLegacy
 } from './baseTemplate'
 
 /**
  * Builds a Holiday Camp (external students) invoice PDF.
- * Uses a simplified student info (no Student ID, no Year group)
- * and a fee table without the No. column.
+ * Pinned to the legacy (pre-redesign) layout — does not adopt the new
+ * KCIS invoice design used by other report types.
  */
 export function buildHolidayCampExternalReport(data: any = {}) {
-    const header = createHeader(data.header)
+    const header = createHeaderLegacy(data.header)
     const studentInfo = createStudentInfoExternal(data.studentInfo)
 
     const feeTable = createFeeTableNoNumber(data.items || [], {
@@ -21,10 +21,10 @@ export function buildHolidayCampExternalReport(data: any = {}) {
         totalAmount: data.totalAmount
     })
 
-    const paymentMethods = createPaymentMethods(data.paymentMethods)
-    const signature = createSignatureSection(data.signature)
+    const paymentMethods = createPaymentMethodsLegacy(data.paymentMethods)
+    const signature = createSignatureSectionLegacy(data.signature)
 
-    return buildDocDefinition({
+    return buildDocDefinitionLegacy({
         header,
         studentInfo,
         content: [feeTable, paymentMethods, signature]
