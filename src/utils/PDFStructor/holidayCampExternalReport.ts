@@ -2,6 +2,7 @@ import {
     createHeaderLegacy,
     createStudentInfoExternal,
     createFeeTableNoNumber,
+    createLatePaymentNote,
     createPaymentMethodsLegacy,
     createSignatureSectionLegacy,
     buildDocDefinitionLegacy
@@ -21,12 +22,13 @@ export function buildHolidayCampExternalReport(data: any = {}) {
         totalAmount: data.totalAmount
     })
 
+    const latePaymentNote = createLatePaymentNote(data.latePayment)
     const paymentMethods = createPaymentMethodsLegacy(data.paymentMethods)
     const signature = createSignatureSectionLegacy(data.signature)
 
     return buildDocDefinitionLegacy({
         header,
         studentInfo,
-        content: [feeTable, paymentMethods, signature]
+        content: [feeTable, latePaymentNote, paymentMethods, signature]
     })
 }

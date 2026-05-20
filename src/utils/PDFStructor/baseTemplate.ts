@@ -112,24 +112,26 @@ export function createStudentInfo(data: any = {}) {
 // ---------------------------------------------------------------------------
 export function createStudentInfoExternal(data: any = {}) {
     const {
+        studentId = '',
         studentName = '',
         contactName = '',
+        address = '',
         invoiceNo = '',
         invoiceDate = dayjs().format('DD MMMM YYYY'),
-        dueDate = '',
-        schoolYear = ''
+        dueDate = ''
     } = data
 
     const leftRows = [
-        ['Student name', studentName],
-        ['Contact name', contactName]
+        ['Client ID', studentId],
+        ['Client Name', studentName],
+        ['Contact name', contactName],
+        ['Address', address]
     ]
 
     const rightRows = [
         ['Invoice no.', invoiceNo],
         ['Invoice date', invoiceDate],
-        ['Due date', dueDate],
-        ['School year', schoolYear]
+        ['Due date', dueDate]
     ]
 
     const maxRows = Math.max(leftRows.length, rightRows.length)
@@ -722,57 +724,22 @@ export function createPaymentMethodsLegacy(data: any = {}) {
         margin: [80, 0, 0, 5]
     })
 
-    const billPaymentText = `Bill Payment via Mobile Banking, Internet Banking, ATM or Bank Counter: Please use the QR code provided below to scan for payment. Kindly note that bank charges will apply to payments made via ATM or at the bank counter.`
-    stack.push({
-        text: [{ text: '-  ' }, { text: billPaymentText }],
-        style: 'paymentText',
-        margin: [0, 0, 0, 3]
-    })
-
-    const billRows = [
-        ['Biller ID no.', billerIdNo],
-        ['Reference no. (Ref 1)', referenceNo1],
-        ['Reference no. (Ref 2)', referenceNo2]
-    ]
-
-    const billContent: any = {
-        columns: [
-            {
-                width: '*',
-                table: {
-                    widths: [120, '*'],
-                    body: billRows.map(([label, value]) => [
-                        { text: label, style: 'bankDetailLabel', border: [false, false, false, false] },
-                        { text: value, style: 'bankDetailValue', border: [false, false, false, false] }
-                    ])
-                },
-                layout: 'noBorders',
-                margin: [80, 0, 0, 0]
-            }
-        ]
-    }
-
-    if (qrCodeBase64) {
-        billContent.columns.push({
-            width: 90,
-            stack: [
-                {
-                    image: qrCodeBase64,
-                    fit: [50, 50],
-                    alignment: 'center'
-                }
-            ],
-            margin: [-300, -8, 0, 0]
-        })
-    }
-
-    stack.push({ ...billContent, margin: [0, 0, 0, 5] })
-
     stack.push({
         text: [
             { text: '-  ' },
             {
                 text: `Credit card: The online payment link will be provided on the parent portal. Visa & Mastercard issued by local banks in Thailand are accepted. Kindly note that a ${bankFeeRate} bank fee will be applied to individual online payment transaction.`
+            }
+        ],
+        style: 'paymentText',
+        margin: [0, 0, 0, 5]
+    })
+
+    stack.push({
+        text: [
+            { text: '-  ' },
+            {
+                text: 'On-site credit card payment: Credit cards issued by both local and overseas banks (VISA, Mastercard, JCB, UnionPay, and Alipay) are accepted. Please note that a bank fee may be applied, subject to your bank. The applicable rate can be viewed at the Cashier.'
             }
         ],
         style: 'paymentText',
@@ -824,11 +791,12 @@ export function createSignatureSectionLegacy(data: any = {}) {
     }
 }
 
-export function buildDocDefinitionLegacy({ header, studentInfo, content, styles = {} }: any) {
+export function buildDocDefinitionLegacy({ header, studentInfo, content, footer, styles = {} }: any) {
     return {
         pageSize: 'A4' as const,
-        pageMargins: [40, 40, 40, 40] as [number, number, number, number],
+        pageMargins: [40, 40, 40, 60] as [number, number, number, number],
         content: [header, studentInfo, ...content].filter(Boolean),
+        footer: footer || createPageFooter(),
         styles: {
             ...getBaseStyles(),
             ...styles
