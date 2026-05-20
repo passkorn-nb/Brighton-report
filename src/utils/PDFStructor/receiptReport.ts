@@ -2,7 +2,7 @@ import {
     createReceiptHeader,
     createReceiptInfoBox,
     createReceiptItemsTable,
-    createPaymentMethodTable,
+    createPaymentMethodLine,
     createReceiptNotes,
     createReceiptSignatures,
     createReceiptFooter,
@@ -10,8 +10,9 @@ import {
 } from './receiptTemplate'
 
 export function buildReceiptReport(data: any = {}) {
+    const isExternal = data.category === 'EXT'
     const header = createReceiptHeader(data.header)
-    const infoBox = createReceiptInfoBox(data.receiptInfo)
+    const infoBox = createReceiptInfoBox(data.receiptInfo, isExternal)
 
     const itemsTable = createReceiptItemsTable(data.items || [], {
         overpaymentAmount: data.overpaymentAmount ?? 0,
@@ -20,7 +21,7 @@ export function buildReceiptReport(data: any = {}) {
         creditNotes: data.creditNotes || []
     })
 
-    const paymentTable = createPaymentMethodTable(data.payment || {})
+    const paymentLine = createPaymentMethodLine(data.payment || {})
     const notes = createReceiptNotes()
     const signatures = createReceiptSignatures(data.signature || {})
     const footer = createReceiptFooter(data.footer)
@@ -28,7 +29,7 @@ export function buildReceiptReport(data: any = {}) {
     return buildReceiptDocDefinition({
         header,
         infoBox,
-        content: [itemsTable, paymentTable, notes, signatures],
+        content: [itemsTable, paymentLine, notes, signatures],
         footer
     })
 }

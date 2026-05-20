@@ -45,13 +45,13 @@ export function createReceiptHeader(data: any = {}) {
         stack.push({ image: logo, fit: [70, 70], alignment: 'center', margin: [0, 0, 0, 6] })
     }
     stack.push({ text: schoolName, style: 'receiptSchoolName', alignment: 'center' })
-    stack.push({ text: schoolLocation, style: 'receiptSchoolLocation', alignment: 'center', margin: [0, 2, 0, 14] })
-    stack.push({ text: 'RECEIPT', style: 'receiptTitle', alignment: 'center', margin: [0, 0, 0, 14] })
+    stack.push({ text: schoolLocation, style: 'receiptSchoolLocation', alignment: 'center', margin: [0, 2, 0, 30] })
+    stack.push({ text: 'RECEIPT', style: 'receiptTitle', alignment: 'center', margin: [0, 0, 0, 24] })
 
     return { stack }
 }
 
-export function createReceiptInfoBox(data: any = {}) {
+export function createReceiptInfoBox(data: any = {}, isExternal = false) {
     const {
         studentId = '',
         studentName = '',
@@ -63,18 +63,30 @@ export function createReceiptInfoBox(data: any = {}) {
         schoolYear = ''
     } = data
 
-    const leftRows = [
-        ['Student ID no.', studentId],
-        ['Student name', studentName],
-        ['Contact name', contactName],
-        ['Address', address]
-    ]
-    const rightRows = [
-        ['Receipt no.', receiptNo],
-        ['Receipt date', receiptDate],
-        ['Year group', yearGroup],
-        ['School year', schoolYear]
-    ]
+    const leftRows = isExternal
+        ? [
+              ['Client ID', studentId],
+              ['Client Name', studentName],
+              ['Contact name', contactName],
+              ['Address', address]
+          ]
+        : [
+              ['Student ID no.', studentId],
+              ['Student name', studentName],
+              ['Contact name', contactName],
+              ['Address', address]
+          ]
+    const rightRows = isExternal
+        ? [
+              ['Receipt no.', receiptNo],
+              ['Receipt date', receiptDate]
+          ]
+        : [
+              ['Receipt no.', receiptNo],
+              ['Receipt date', receiptDate],
+              ['Year group', yearGroup],
+              ['School year', schoolYear]
+          ]
 
     const maxRows = Math.max(leftRows.length, rightRows.length)
     const body: any[] = []
@@ -109,7 +121,7 @@ export function createReceiptInfoBox(data: any = {}) {
 }
 
 export function createReceiptItemsTable(items: any[] = [], options: any = {}) {
-    const { overpaymentAmount = 0, totalAmount = null, amountInWords = '', minRows = 6, creditNotes = [] } = options
+    const { overpaymentAmount = 0, totalAmount = null, amountInWords = '', minRows = 10, creditNotes = [] } = options
 
     const total =
         totalAmount != null
@@ -132,11 +144,11 @@ export function createReceiptItemsTable(items: any[] = [], options: any = {}) {
         { text: formatReceiptAmount(item.receivedAmount), alignment: 'right', style: 'tableCell' }
     ])
 
-    const cnRows: any[] = (creditNotes as any[]).map((cn: any) => [
-        { text: '', style: 'tableCell', alignment: 'center' },
+    const cnRows: any[] = (creditNotes as any[]).map((cn: any, idx: number) => [
+        { text: String(items.length + idx + 1), style: 'tableCell', alignment: 'center' },
         { text: cn.cnNumber || '', style: 'tableCell', alignment: 'center' },
         { text: cn.issueDate || 'Credit note applied', style: 'tableCell', alignment: 'center' },
-        { text: `-${formatCurrency(Math.abs(Number(cn.amount || 0)))}`, style: 'tableCell', alignment: 'right' }
+        { text: `(${formatCurrency(Math.abs(Number(cn.amount || 0)))})`, style: 'tableCell', alignment: 'right' }
     ])
 
     const emptyCount = Math.max(0, minRows - items.length - creditNotes.length)
@@ -174,8 +186,7 @@ export function createReceiptItemsTable(items: any[] = [], options: any = {}) {
     const totalRow: any[] = [
         {
             text: (amountInWords || '').toUpperCase(),
-            style: 'totalWordsCell',
-            bold: true,
+            style: 'receiptTotalWords',
             colSpan: 3,
             border: [true, true, true, true]
         },
@@ -183,8 +194,8 @@ export function createReceiptItemsTable(items: any[] = [], options: any = {}) {
         {},
         {
             columns: [
-                { text: 'TOTAL', style: 'totalLabel', bold: true, width: 'auto' },
-                { text: formatCurrency(total), style: 'totalValue', bold: true, width: '*', alignment: 'right' }
+                { text: 'TOTAL', style: 'receiptTotalLabel', width: 'auto' },
+                { text: formatCurrency(total), style: 'receiptTotalValue', width: '*', alignment: 'right' }
             ],
             border: [true, true, true, true]
         }
@@ -216,41 +227,15 @@ export function createReceiptItemsTable(items: any[] = [], options: any = {}) {
     }
 }
 
-export function createPaymentMethodTable(data: any = {}) {
-    const { paymentMethod = '', bankName = '', bankBranch = '', chequeNo = '', chequeDate = '' } = data
-
-    const headerRow = [
-        { text: 'Payment method', style: 'tableHeader', alignment: 'center' },
-        { text: 'Bank name', style: 'tableHeader', alignment: 'center' },
-        { text: 'Bank branch', style: 'tableHeader', alignment: 'center' },
-        { text: 'Cheque no.', style: 'tableHeader', alignment: 'center' },
-        { text: 'Cheque date', style: 'tableHeader', alignment: 'center' }
-    ]
-    const dataRow = [
-        { text: valueOrDash(paymentMethod), style: 'tableCell', alignment: 'center' },
-        { text: valueOrDash(bankName), style: 'tableCell', alignment: 'center' },
-        { text: valueOrDash(bankBranch), style: 'tableCell', alignment: 'center' },
-        { text: valueOrDash(chequeNo), style: 'tableCell', alignment: 'center' },
-        { text: valueOrDash(chequeDate), style: 'tableCell', alignment: 'center' }
-    ]
-
+export function createPaymentMethodLine(data: any = {}) {
+    const { paymentMethod = '' } = data
     return {
-        table: {
-            headerRows: 1,
-            widths: ['*', '*', '*', '*', '*'],
-            body: [headerRow, dataRow]
-        },
-        layout: {
-            hLineWidth: () => 1,
-            vLineWidth: () => 1,
-            hLineColor: () => '#000000',
-            vLineColor: () => '#000000',
-            paddingLeft: () => 6,
-            paddingRight: () => 6,
-            paddingTop: () => 4,
-            paddingBottom: () => 4
-        },
-        margin: [0, 4, 0, 6]
+        text: [
+            { text: 'Payment method : ', bold: true },
+            { text: valueOrDash(paymentMethod) }
+        ],
+        style: 'paymentMethodLine',
+        margin: [0, 4, 0, 12]
     }
 }
 
@@ -259,20 +244,27 @@ export function createReceiptNotes() {
         stack: [
             {
                 text: 'In case of payment made by cheque, this receipt will not be valid until the cheque has been honoured by the bank.',
-                style: 'noteText'
+                style: 'receiptNoteText'
             },
             {
                 text: 'Please note that any overpayment amount is non-refundable and will be credited against future school fee invoices.',
-                style: 'noteText',
-                margin: [0, 2, 0, 0]
+                style: 'receiptNoteText',
+                margin: [0, 10, 0, 0]
             }
         ],
-        margin: [0, 0, 0, 12]
+        margin: [0, 4, 0, 12]
     }
 }
 
 export function createReceiptSignatures(data: any = {}) {
     const { collectorName = '', authorisedSignature = '', authorisedTitle = 'Head of Finance and Accounting' } = data
+
+    const boxLayout = {
+        hLineWidth: () => 0.5,
+        vLineWidth: () => 0.5,
+        hLineColor: () => '#000000',
+        vLineColor: () => '#000000'
+    }
 
     return {
         columns: [
@@ -288,18 +280,13 @@ export function createReceiptSignatures(data: any = {}) {
                                         text: collectorName || ' ',
                                         style: 'signatureName',
                                         alignment: 'center',
-                                        margin: [0, 4, 0, 4]
+                                        margin: [0, 8, 0, 8]
                                     }
                                 ]
                             ]
                         },
-                        layout: {
-                            hLineWidth: () => 1,
-                            vLineWidth: () => 1,
-                            hLineColor: () => '#000000',
-                            vLineColor: () => '#000000'
-                        },
-                        margin: [40, 0, 40, 4]
+                        layout: boxLayout,
+                        margin: [40, 0, 40, 6]
                     },
                     { text: 'Collector', style: 'signatureLabel', alignment: 'center' }
                 ]
@@ -308,21 +295,28 @@ export function createReceiptSignatures(data: any = {}) {
                 width: '*',
                 stack: [
                     {
-                        text: authorisedSignature || ' ',
-                        style: 'signatureName',
-                        alignment: 'center',
-                        margin: [0, 0, 0, 4]
-                    },
-                    {
-                        canvas: [{ type: 'line', x1: 40, y1: 0, x2: 200, y2: 0, lineWidth: 1, lineColor: '#000000' }],
-                        margin: [0, 0, 0, 4]
+                        table: {
+                            widths: ['*'],
+                            body: [
+                                [
+                                    {
+                                        text: authorisedSignature || ' ',
+                                        style: 'signatureName',
+                                        alignment: 'center',
+                                        margin: [0, 8, 0, 8]
+                                    }
+                                ]
+                            ]
+                        },
+                        layout: boxLayout,
+                        margin: [40, 0, 40, 6]
                     },
                     { text: 'Authorised signature', style: 'signatureLabel', alignment: 'center' },
                     { text: authorisedTitle, style: 'signatureLabel', alignment: 'center' }
                 ]
             }
         ],
-        margin: [0, 8, 0, 0]
+        margin: [0, 24, 0, 0]
     }
 }
 
@@ -357,6 +351,54 @@ export function getReceiptStyles() {
         receiptTitle: {
             fontSize: 26,
             bold: true,
+            color: '#000000'
+        },
+        paymentMethodLine: {
+            fontSize: 11,
+            color: '#000000'
+        },
+        receiptTotalWords: {
+            fontSize: 9,
+            bold: true,
+            color: '#000000'
+        },
+        receiptTotalLabel: {
+            fontSize: 10,
+            bold: true,
+            color: '#000000'
+        },
+        receiptTotalValue: {
+            fontSize: 10,
+            bold: true,
+            color: '#000000'
+        },
+        receiptNoteText: {
+            fontSize: 9,
+            color: '#000000'
+        },
+        infoLabel: {
+            fontSize: 10,
+            color: '#000000'
+        },
+        infoValue: {
+            fontSize: 10,
+            color: '#000000'
+        },
+        tableHeader: {
+            fontSize: 10,
+            bold: false,
+            color: '#000000'
+        },
+        tableCell: {
+            fontSize: 10,
+            color: '#000000'
+        },
+        signatureName: {
+            fontSize: 11,
+            color: '#000000'
+        },
+        signatureLabel: {
+            fontSize: 9,
             color: '#000000'
         },
         footerText: {
