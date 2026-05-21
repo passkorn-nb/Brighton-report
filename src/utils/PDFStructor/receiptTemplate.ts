@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import dayjs from 'dayjs'
 import { formatCurrency, getBaseStyles } from './baseTemplate'
+import { formatYearGroupLabel } from '../yearGroupLabel'
 
 const LOGO_PATH = path.resolve(process.cwd(), 'src/assets/images/kcis-logo.png')
 let cachedLogo: string | null | undefined
@@ -84,7 +85,7 @@ export function createReceiptInfoBox(data: any = {}, isExternal = false) {
         : [
               ['Receipt no.', receiptNo],
               ['Receipt date', receiptDate],
-              ['Year group', yearGroup],
+              ['Year group', formatYearGroupLabel(yearGroup)],
               ['School year', schoolYear]
           ]
 

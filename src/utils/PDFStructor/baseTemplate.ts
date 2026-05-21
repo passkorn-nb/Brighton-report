@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import dayjs from 'dayjs'
+import { formatYearGroupLabel } from '../yearGroupLabel'
 
 const LOGO_PATH = path.resolve(process.cwd(), 'src/assets/images/kcis-logo.png')
 let cachedLogo: string | null | undefined
@@ -62,7 +63,7 @@ export function createStudentInfo(data: any = {}) {
     const leftRows = [
         ['Student ID no.', studentId],
         ['Student name', studentName],
-        ['Year group', yearGroup],
+        ['Year group', formatYearGroupLabel(yearGroup)],
         ['Contact name', contactName],
         ['Address', address]
     ]
