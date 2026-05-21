@@ -185,18 +185,29 @@ export function createReceiptItemsTable(items: any[] = [], options: any = {}) {
 
     const totalRow: any[] = [
         {
-            text: (amountInWords || '').toUpperCase(),
-            style: 'receiptTotalWords',
             colSpan: 3,
+            columns: [
+                {
+                    text: (amountInWords || '').toUpperCase(),
+                    style: 'receiptTotalWords',
+                    width: '*'
+                },
+                {
+                    text: 'TOTAL',
+                    style: 'receiptTotalLabel',
+                    width: 'auto',
+                    alignment: 'right',
+                    margin: [4, 0, 0, 0]
+                }
+            ],
             border: [true, true, true, true]
         },
         {},
         {},
         {
-            columns: [
-                { text: 'TOTAL', style: 'receiptTotalLabel', width: 'auto' },
-                { text: formatCurrency(total), style: 'receiptTotalValue', width: '*', alignment: 'right' }
-            ],
+            text: formatCurrency(total),
+            style: 'receiptTotalValue',
+            alignment: 'right',
             border: [true, true, true, true]
         }
     ]
