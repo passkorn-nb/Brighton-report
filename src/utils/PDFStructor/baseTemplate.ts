@@ -208,25 +208,34 @@ export function createFeeTable(items: any[] = [], options: any = {}) {
     // Total row
     const totalRow: any[] = []
     if (showNo) {
-        // Span the amount-in-words across No. + Description columns
+        // Left cell (spans No. + Description): amountInWords [...] TOTAL (TOTAL pinned right)
         totalRow.push({
-            text: amountInWords || '',
-            style: 'totalWordsCell',
+            columns: [
+                { text: amountInWords || '', style: 'totalWordsCell', width: '*' },
+                { text: 'TOTAL', style: 'totalLabel', width: 'auto' }
+            ],
             colSpan: 2
         })
         totalRow.push({}) // empty cell consumed by colSpan
+        // Right cell (Amount column): numeric only
+        totalRow.push({
+            text: formatCurrency(total),
+            style: 'totalValue',
+            alignment: 'right'
+        })
     } else {
+        // EXT — keep legacy layout
         totalRow.push({
             text: amountInWords || '',
             style: 'totalWordsCell'
         })
+        totalRow.push({
+            columns: [
+                { text: 'TOTAL', style: 'totalLabel', width: 'auto' },
+                { text: formatCurrency(total), style: 'totalValue', width: '*', alignment: 'right' }
+            ]
+        })
     }
-    totalRow.push({
-        columns: [
-            { text: 'TOTAL', style: 'totalLabel', width: 'auto' },
-            { text: formatCurrency(total), style: 'totalValue', width: '*', alignment: 'right' }
-        ]
-    })
 
     return {
         table: {
