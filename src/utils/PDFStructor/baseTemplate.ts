@@ -482,12 +482,12 @@ export function createPaymentMethods(data: any = {}) {
 // Signature section – "Prepared by" (left) and "Authorised officer" (right)
 // ---------------------------------------------------------------------------
 export function createSignatureSection(data: any = {}) {
-    const { preparedBy = '', authorisedTitle = 'Head of Finance and Accounting' } = data
-    const signatureImg = loadSignatureBase64()
+    const { preparedBy = '', authorisedTitle = '', showSignature = true } = data
+    const signatureImg = showSignature ? loadSignatureBase64() : null
 
     const authorisedNode: any = signatureImg
         ? { image: signatureImg, fit: [70, 30], alignment: 'center', margin: [0, 0, 0, 5] }
-        : { text: '', style: 'signatureName', alignment: 'center', margin: [0, 0, 0, 5] }
+        : { text: '', style: 'signatureName', alignment: 'center', margin: [0, 20, 0, 5] }
 
     return {
         columns: [
@@ -813,12 +813,12 @@ export function createPaymentMethodsLegacy(data: any = {}) {
 }
 
 export function createSignatureSectionLegacy(data: any = {}) {
-    const { preparedBy = '' } = data
-    const signatureImg = loadSignatureBase64()
+    const { preparedBy = '', showSignature = true } = data
+    const signatureImg = showSignature ? loadSignatureBase64() : null
 
     const authorisedNode: any = signatureImg
         ? { image: signatureImg, fit: [70, 30], alignment: 'center', margin: [0, 0, 0, 5] }
-        : { text: '', style: 'signatureName', alignment: 'center', margin: [0, 0, 0, 5] }
+        : { text: '', style: 'signatureName', alignment: 'center', margin: [0, 20, 0, 5] }
 
     return {
         columns: [
