@@ -3,6 +3,16 @@ import path from 'path'
 import dayjs from 'dayjs'
 import { formatYearGroupLabel } from '../yearGroupLabel'
 
+const FONTS_DIR = path.resolve(process.cwd(), 'src/assets/fonts')
+export const DEFAULT_FONT = fs.existsSync(path.join(FONTS_DIR, 'GillSansMT-Regular.ttf'))
+    ? 'GillSansMT'
+    : 'Sarabun'
+
+const THAI_RE = /[฀-๿]/
+export function thaiFont(text: unknown): { font?: string } {
+    return text != null && THAI_RE.test(String(text)) ? { font: 'Sarabun' } : {}
+}
+
 const LOGO_PATH = path.resolve(process.cwd(), 'src/assets/images/kcis-logo.png')
 let cachedLogo: string | null | undefined
 
@@ -102,9 +112,9 @@ export function createStudentInfo(data: any = {}) {
         const right = rightRows[i] || ['', '']
         body.push([
             { text: left[0], style: 'infoLabel' },
-            { text: left[1], style: 'infoValue' },
+            { text: left[1], style: 'infoValue', ...thaiFont(left[1]) },
             { text: right[0], style: 'infoLabel' },
-            { text: right[1], style: 'infoValue' }
+            { text: right[1], style: 'infoValue', ...thaiFont(right[1]) }
         ])
     }
 
@@ -161,9 +171,15 @@ export function createStudentInfoExternal(data: any = {}) {
         const right = rightRows[i] || ['', '']
         body.push([
             { text: left[0], style: 'infoLabel', border: [false, false, false, false] },
-            { text: left[1], style: 'infoValue', border: [false, false, false, false] },
+            { text: left[1], style: 'infoValue', border: [false, false, false, false], ...thaiFont(left[1]) },
             { text: right[0], style: 'infoLabel', border: [false, false, false, false] },
-            { text: right[1], style: 'infoValue', border: [false, false, false, false], alignment: 'right' }
+            {
+                text: right[1],
+                style: 'infoValue',
+                border: [false, false, false, false],
+                alignment: 'right',
+                ...thaiFont(right[1])
+            }
         ])
     }
 
@@ -207,9 +223,14 @@ export function createFeeTable(items: any[] = [], options: any = {}) {
             row.push({ text: String(index + 1), alignment: 'center', style: 'tableCell' })
         }
         const cellStack: any[] = []
-        if (item.name) cellStack.push({ text: item.name, style: 'tableCell' })
+        if (item.name) cellStack.push({ text: item.name, style: 'tableCell', ...thaiFont(item.name) })
         if (item.description)
-            cellStack.push({ text: item.description, style: 'tableCellSubtext', margin: [0, 1, 0, 0] })
+            cellStack.push({
+                text: item.description,
+                style: 'tableCellSubtext',
+                margin: [0, 1, 0, 0],
+                ...thaiFont(item.description)
+            })
         row.push(cellStack.length === 0 ? { text: '', style: 'tableCell' } : { stack: cellStack })
         row.push({ text: formatCurrency(item.amount), alignment: 'right', style: 'tableCell' })
         return row
@@ -473,7 +494,13 @@ export function createSignatureSection(data: any = {}) {
             {
                 width: '*',
                 stack: [
-                    { text: preparedBy || '', style: 'signatureName', alignment: 'center', margin: [0, 20, 0, 5] },
+                    {
+                        text: preparedBy || '',
+                        style: 'signatureName',
+                        alignment: 'center',
+                        margin: [0, 20, 0, 5],
+                        ...thaiFont(preparedBy)
+                    },
                     {
                         canvas: [{ type: 'line', x1: 20, y1: 0, x2: 200, y2: 0, lineWidth: 1, lineColor: '#000000' }]
                     },
@@ -655,7 +682,7 @@ export function buildDocDefinition({ header, studentInfo, content, styles = {}, 
             ...styles
         },
         defaultStyle: {
-            font: 'Sarabun'
+            font: DEFAULT_FONT
         }
     }
 
@@ -682,8 +709,14 @@ export function createHeaderLegacy(data: any = {}) {
     if (logo) {
         stack.push({ image: logo, fit: [90, 90], alignment: 'center', margin: [0, 0, 0, 6] })
     }
-    stack.push({ text: schoolName, style: 'schoolName', alignment: 'center' })
-    stack.push({ text: schoolLocation, style: 'schoolLocation', alignment: 'center', margin: [0, 0, 0, 1] })
+    stack.push({ text: schoolName, style: 'schoolName', alignment: 'center', ...thaiFont(schoolName) })
+    stack.push({
+        text: schoolLocation,
+        style: 'schoolLocation',
+        alignment: 'center',
+        margin: [0, 0, 0, 1],
+        ...thaiFont(schoolLocation)
+    })
     stack.push({ text: address, style: 'addressText', alignment: 'center' })
     stack.push({ text: contactLine, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 8] })
     stack.push({ text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, 0, 0, 8] })
@@ -792,7 +825,13 @@ export function createSignatureSectionLegacy(data: any = {}) {
             {
                 width: '*',
                 stack: [
-                    { text: preparedBy || '', style: 'signatureName', alignment: 'center', margin: [0, 20, 0, 5] },
+                    {
+                        text: preparedBy || '',
+                        style: 'signatureName',
+                        alignment: 'center',
+                        margin: [0, 20, 0, 5],
+                        ...thaiFont(preparedBy)
+                    },
                     {
                         canvas: [{ type: 'line', x1: 20, y1: 0, x2: 200, y2: 0, lineWidth: 1, lineColor: '#000000' }]
                     },
@@ -832,7 +871,7 @@ export function buildDocDefinitionLegacy({ header, studentInfo, content, footer,
             ...styles
         },
         defaultStyle: {
-            font: 'Sarabun'
+            font: DEFAULT_FONT
         }
     }
 }

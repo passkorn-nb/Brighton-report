@@ -1,17 +1,30 @@
+import fs from 'fs'
 import path from 'path'
 import pdfMake from 'pdfmake'
 import { getReportBuilder, getReportTypes as getTypes } from './PDFStructor'
 
 // Server-side font setup for pdfmake (using local fonts in assets/fonts)
 const fontsDir = path.resolve(process.cwd(), 'src/assets/fonts')
-pdfMake.addFonts({
+
+const fontDef: any = {
     Sarabun: {
         normal: path.join(fontsDir, 'Sarabun-Regular.ttf'),
         bold: path.join(fontsDir, 'Sarabun-Medium.ttf'),
         italics: path.join(fontsDir, 'Sarabun-Italic.ttf'),
         bolditalics: path.join(fontsDir, 'Sarabun-MediumItalic.ttf')
     }
-})
+}
+
+if (fs.existsSync(path.join(fontsDir, 'GillSansMT-Regular.ttf'))) {
+    fontDef.GillSansMT = {
+        normal: path.join(fontsDir, 'GillSansMT-Regular.ttf'),
+        bold: path.join(fontsDir, 'GillSansMT-Bold.ttf'),
+        italics: path.join(fontsDir, 'GillSansMT-Italic.ttf'),
+        bolditalics: path.join(fontsDir, 'GillSansMT-BoldItalic.ttf')
+    }
+}
+
+pdfMake.addFonts(fontDef)
 // Block all external URL access — method exists at runtime but is missing from @types/pdfmake
 ;(pdfMake as any).setUrlAccessPolicy(() => false)
 

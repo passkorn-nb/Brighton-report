@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import dayjs from 'dayjs'
-import { formatCurrency, getBaseStyles } from './baseTemplate'
+import { formatCurrency, getBaseStyles, DEFAULT_FONT, thaiFont } from './baseTemplate'
 import { formatYearGroupLabel } from '../yearGroupLabel'
 
 const LOGO_PATH = path.resolve(process.cwd(), 'src/assets/images/kcis-logo.png')
@@ -112,9 +112,9 @@ export function createReceiptInfoBox(data: any = {}, isExternal = false) {
         const right = rightRows[i] || ['', '']
         body.push([
             { text: left[0], style: 'infoLabel' },
-            { text: left[1], style: 'infoValue' },
+            { text: left[1], style: 'infoValue', ...thaiFont(left[1]) },
             { text: right[0], style: 'infoLabel' },
-            { text: right[1], style: 'infoValue', alignment: 'right', noWrap: true }
+            { text: right[1], style: 'infoValue', alignment: 'right', noWrap: true, ...thaiFont(right[1]) }
         ])
     }
 
@@ -156,15 +156,20 @@ export function createReceiptItemsTable(items: any[] = [], options: any = {}) {
 
     const bodyRows: any[] = items.map((item: any, index: number) => [
         { text: String(index + 1), alignment: 'center', style: 'tableCell' },
-        { text: item.documentNo || '', alignment: 'center', style: 'tableCell' },
-        { text: item.issueDate || '', alignment: 'center', style: 'tableCell' },
+        { text: item.documentNo || '', alignment: 'center', style: 'tableCell', ...thaiFont(item.documentNo) },
+        { text: item.issueDate || '', alignment: 'center', style: 'tableCell', ...thaiFont(item.issueDate) },
         { text: formatReceiptAmount(item.receivedAmount), alignment: 'right', style: 'tableCell' }
     ])
 
     const cnRows: any[] = (creditNotes as any[]).map((cn: any, idx: number) => [
         { text: String(items.length + idx + 1), style: 'tableCell', alignment: 'center' },
-        { text: cn.cnNumber || '', style: 'tableCell', alignment: 'center' },
-        { text: cn.issueDate || 'Credit note applied', style: 'tableCell', alignment: 'center' },
+        { text: cn.cnNumber || '', style: 'tableCell', alignment: 'center', ...thaiFont(cn.cnNumber) },
+        {
+            text: cn.issueDate || 'Credit note applied',
+            style: 'tableCell',
+            alignment: 'center',
+            ...thaiFont(cn.issueDate)
+        },
         { text: `(${formatCurrency(Math.abs(Number(cn.amount || 0)))})`, style: 'tableCell', alignment: 'right' }
     ])
 
@@ -311,7 +316,8 @@ export function createReceiptSignatures(data: any = {}) {
                                         text: collectorName || ' ',
                                         style: 'signatureName',
                                         alignment: 'center',
-                                        margin: [0, 12, 0, 0]
+                                        margin: [0, 12, 0, 0],
+                                        ...thaiFont(collectorName)
                                     }
                                 ]
                             ]
@@ -434,6 +440,6 @@ export function buildReceiptDocDefinition({ header, infoBox, content, footer }: 
         content: [header, infoBox, ...content].filter(Boolean),
         footer: footer || createReceiptFooter(),
         styles: getReceiptStyles(),
-        defaultStyle: { font: 'Sarabun' }
+        defaultStyle: { font: DEFAULT_FONT }
     }
 }
