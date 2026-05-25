@@ -21,6 +21,25 @@ function loadLogoBase64(): string | null {
     return cachedLogo
 }
 
+const SIGNATURE_PATH = path.resolve(process.cwd(), 'src/assets/images/signature.png')
+let cachedSignature: string | null | undefined
+
+function loadSignatureBase64(): string | null {
+    if (cachedSignature !== undefined) return cachedSignature
+    try {
+        if (fs.existsSync(SIGNATURE_PATH)) {
+            const buf = fs.readFileSync(SIGNATURE_PATH)
+            cachedSignature = `data:image/png;base64,${buf.toString('base64')}`
+        } else {
+            logger.warn(`Signature file not found at ${SIGNATURE_PATH}, falling back to blank`)
+            cachedSignature = null
+        }
+    } catch {
+        cachedSignature = null
+    }
+    return cachedSignature
+}
+
 /**
  * Shared base template elements for all KCIS invoice report types.
  * Matches the official King's College International School Bangkok invoice format.
@@ -37,9 +56,9 @@ export function createHeader(data: any = {}) {
     const stack: any[] = []
 
     if (logo) {
-        stack.push({ image: logo, fit: [90, 90], alignment: 'center', margin: [0, 0, 0, 8] })
+        stack.push({ image: logo, fit: [90, 90], alignment: 'center', margin: [0, 0, 0, 4] })
     }
-    stack.push({ text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, 0, 0, 12] })
+    stack.push({ text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, 0, 0, 6] })
 
     return { stack }
 }
@@ -104,7 +123,7 @@ export function createStudentInfo(data: any = {}) {
             paddingTop: () => 5,
             paddingBottom: () => 5
         },
-        margin: [0, 0, 0, 8]
+        margin: [0, 0, 0, 4]
     }
 }
 
@@ -154,7 +173,7 @@ export function createStudentInfoExternal(data: any = {}) {
             body
         },
         layout: 'noBorders',
-        margin: [0, 0, 0, 8]
+        margin: [0, 0, 0, 4]
     }
 }
 
@@ -259,7 +278,7 @@ export function createFeeTable(items: any[] = [], options: any = {}) {
             paddingTop: () => 4,
             paddingBottom: () => 4
         },
-        margin: [0, 0, 0, 3]
+        margin: [0, 0, 0, 0]
     }
 }
 
@@ -288,7 +307,7 @@ export function createLatePaymentNote(data: any = {}) {
                 margin: [0, 2, 0, 0]
             }
         ],
-        margin: [0, 3, 0, 8]
+        margin: [0, 2, 0, 4]
     }
 }
 
@@ -434,21 +453,26 @@ export function createPaymentMethods(data: any = {}) {
         margin: [0, 0, 0, 0]
     })
 
-    return { stack, margin: [0, 0, 0, 10] }
+    return { stack, margin: [0, 0, 0, 4] }
 }
 
 // ---------------------------------------------------------------------------
 // Signature section – "Prepared by" (left) and "Authorised officer" (right)
 // ---------------------------------------------------------------------------
 export function createSignatureSection(data: any = {}) {
-    const { preparedBy = '', authorisedOfficer = '', authorisedTitle = 'Head of Finance and Accounting' } = data
+    const { preparedBy = '', authorisedTitle = 'Head of Finance and Accounting' } = data
+    const signatureImg = loadSignatureBase64()
+
+    const authorisedNode: any = signatureImg
+        ? { image: signatureImg, fit: [70, 30], alignment: 'center', margin: [0, 0, 0, 5] }
+        : { text: '', style: 'signatureName', alignment: 'center', margin: [0, 0, 0, 5] }
 
     return {
         columns: [
             {
                 width: '*',
                 stack: [
-                    { text: preparedBy || '', style: 'signatureName', alignment: 'center', margin: [0, 0, 0, 5] },
+                    { text: preparedBy || '', style: 'signatureName', alignment: 'center', margin: [0, 20, 0, 5] },
                     {
                         canvas: [{ type: 'line', x1: 20, y1: 0, x2: 200, y2: 0, lineWidth: 1, lineColor: '#000000' }]
                     },
@@ -459,12 +483,7 @@ export function createSignatureSection(data: any = {}) {
             {
                 width: '*',
                 stack: [
-                    {
-                        text: authorisedOfficer || '',
-                        style: 'signatureName',
-                        alignment: 'center',
-                        margin: [0, 0, 0, 5]
-                    },
+                    authorisedNode,
                     {
                         canvas: [{ type: 'line', x1: 20, y1: 0, x2: 200, y2: 0, lineWidth: 1, lineColor: '#000000' }]
                     },
@@ -484,7 +503,7 @@ export function createSignatureSection(data: any = {}) {
                 alignment: 'center'
             }
         ],
-        margin: [0, 20, 0, 0]
+        margin: [0, 8, 0, 0]
     }
 }
 
@@ -597,7 +616,7 @@ export function createPageFooter(data: any = {}) {
             { text: `${schoolName}  ${address}`, style: 'addressText', alignment: 'center' },
             { text: contactLine, style: 'addressText', alignment: 'center', margin: [0, 1, 0, 0] }
         ],
-        margin: [40, 15, 40, 0]
+        margin: [40, 8, 40, 0]
     })
 }
 
@@ -607,7 +626,7 @@ export function createPageFooter(data: any = {}) {
 export function getDefaultPageSettings() {
     return {
         pageSize: 'A4' as const,
-        pageMargins: [40, 40, 40, 60] as [number, number, number, number]
+        pageMargins: [40, 28, 40, 40] as [number, number, number, number]
     }
 }
 
@@ -756,18 +775,23 @@ export function createPaymentMethodsLegacy(data: any = {}) {
         margin: [0, 0, 0, 0]
     })
 
-    return { stack, margin: [0, 0, 0, 10] }
+    return { stack, margin: [0, 0, 0, 4] }
 }
 
 export function createSignatureSectionLegacy(data: any = {}) {
-    const { preparedBy = '', authorisedOfficer = '' } = data
+    const { preparedBy = '' } = data
+    const signatureImg = loadSignatureBase64()
+
+    const authorisedNode: any = signatureImg
+        ? { image: signatureImg, fit: [70, 30], alignment: 'center', margin: [0, 0, 0, 5] }
+        : { text: '', style: 'signatureName', alignment: 'center', margin: [0, 0, 0, 5] }
 
     return {
         columns: [
             {
                 width: '*',
                 stack: [
-                    { text: preparedBy || '', style: 'signatureName', alignment: 'center', margin: [0, 0, 0, 5] },
+                    { text: preparedBy || '', style: 'signatureName', alignment: 'center', margin: [0, 20, 0, 5] },
                     {
                         canvas: [{ type: 'line', x1: 20, y1: 0, x2: 200, y2: 0, lineWidth: 1, lineColor: '#000000' }]
                     },
@@ -778,12 +802,7 @@ export function createSignatureSectionLegacy(data: any = {}) {
             {
                 width: '*',
                 stack: [
-                    {
-                        text: authorisedOfficer || '',
-                        style: 'signatureName',
-                        alignment: 'center',
-                        margin: [0, 0, 0, 5]
-                    },
+                    authorisedNode,
                     {
                         canvas: [{ type: 'line', x1: 20, y1: 0, x2: 200, y2: 0, lineWidth: 1, lineColor: '#000000' }]
                     },
@@ -797,14 +816,14 @@ export function createSignatureSectionLegacy(data: any = {}) {
                 alignment: 'center'
             }
         ],
-        margin: [0, 20, 0, 0]
+        margin: [0, 8, 0, 0]
     }
 }
 
 export function buildDocDefinitionLegacy({ header, studentInfo, content, footer, styles = {} }: any) {
     return {
         pageSize: 'A4' as const,
-        pageMargins: [40, 40, 40, 60] as [number, number, number, number],
+        pageMargins: [40, 28, 40, 40] as [number, number, number, number],
         content: [header, studentInfo, ...content].filter(Boolean),
         footer: footer || createPageFooter(),
         styles: {
