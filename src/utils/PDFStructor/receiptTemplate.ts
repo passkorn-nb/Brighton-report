@@ -262,10 +262,7 @@ export function createReceiptItemsTable(items: any[] = [], options: any = {}) {
 export function createPaymentMethodLine(data: any = {}) {
     const { paymentMethod = '' } = data
     return {
-        text: [
-            { text: 'Payment method : ', bold: true },
-            { text: valueOrDash(paymentMethod) }
-        ],
+        text: [{ text: 'Payment method : ', bold: true }, { text: valueOrDash(paymentMethod) }],
         style: 'paymentMethodLine',
         margin: [0, 4, 0, 12]
     }
@@ -311,13 +308,14 @@ export function createReceiptSignatures(data: any = {}) {
                     {
                         table: {
                             widths: ['*'],
+                            heights: [38],
                             body: [
                                 [
                                     {
                                         text: collectorName || ' ',
                                         style: 'signatureName',
                                         alignment: 'center',
-                                        margin: [0, 8, 0, 8]
+                                        margin: [0, 12, 0, 0]
                                     }
                                 ]
                             ]
@@ -332,7 +330,7 @@ export function createReceiptSignatures(data: any = {}) {
                 width: '*',
                 stack: [
                     {
-                        table: { widths: ['*'], body: [[authorisedCell]] },
+                        table: { widths: ['*'], heights: [38], body: [[authorisedCell]] },
                         layout: boxLayout,
                         margin: [40, 0, 40, 6]
                     },
@@ -356,7 +354,7 @@ export function createReceiptFooter(data: any = {}) {
             { text: addressLine, style: 'footerText', alignment: 'center' },
             { text: contactLine, style: 'footerText', alignment: 'center' }
         ],
-        margin: [40, 0, 40, 20]
+        margin: [40, 0, 40, 0]
     })
 }
 
