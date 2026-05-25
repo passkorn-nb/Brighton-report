@@ -57,16 +57,12 @@ function valueOrDash(value: any): string {
 }
 
 export function createReceiptHeader(data: any = {}) {
-    const { schoolName = "KING'S COLLEGE INTERNATIONAL SCHOOL", schoolLocation = 'BANGKOK', logoBase64 } = data
-
     const logo = loadLogoBase64()
     const stack: any[] = []
 
     if (logo) {
-        stack.push({ image: logo, fit: [70, 70], alignment: 'center', margin: [0, 0, 0, 6] })
+        stack.push({ image: logo, fit: [170, 170], alignment: 'center', margin: [0, 0, 0, 6] })
     }
-    stack.push({ text: schoolName, style: 'receiptSchoolName', alignment: 'center' })
-    stack.push({ text: schoolLocation, style: 'receiptSchoolLocation', alignment: 'center', margin: [0, 2, 0, 30] })
     stack.push({ text: 'RECEIPT', style: 'receiptTitle', alignment: 'center', margin: [0, 0, 0, 24] })
 
     return { stack }

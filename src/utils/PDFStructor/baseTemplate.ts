@@ -56,7 +56,7 @@ export function createHeader(data: any = {}) {
     const stack: any[] = []
 
     if (logo) {
-        stack.push({ image: logo, fit: [90, 90], alignment: 'center', margin: [0, 0, 0, 4] })
+        stack.push({ image: logo, fit: [150, 150], alignment: 'center', margin: [0, 0, 0, 4] })
     }
     stack.push({ text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, 0, 0, 6] })
 
@@ -208,7 +208,8 @@ export function createFeeTable(items: any[] = [], options: any = {}) {
         }
         const cellStack: any[] = []
         if (item.name) cellStack.push({ text: item.name, style: 'tableCell' })
-        if (item.description) cellStack.push({ text: item.description, style: 'tableCellSubtext', margin: [0, 1, 0, 0] })
+        if (item.description)
+            cellStack.push({ text: item.description, style: 'tableCellSubtext', margin: [0, 1, 0, 0] })
         row.push(cellStack.length === 0 ? { text: '', style: 'tableCell' } : { stack: cellStack })
         row.push({ text: formatCurrency(item.amount), alignment: 'right', style: 'tableCell' })
         return row
@@ -679,7 +680,7 @@ export function createHeaderLegacy(data: any = {}) {
     const stack: any[] = []
 
     if (logo) {
-        stack.push({ image: logo, fit: [70, 70], alignment: 'center', margin: [0, 0, 0, 6] })
+        stack.push({ image: logo, fit: [90, 90], alignment: 'center', margin: [0, 0, 0, 6] })
     }
     stack.push({ text: schoolName, style: 'schoolName', alignment: 'center' })
     stack.push({ text: schoolLocation, style: 'schoolLocation', alignment: 'center', margin: [0, 0, 0, 1] })
