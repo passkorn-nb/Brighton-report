@@ -635,7 +635,7 @@ export function buildDocDefinition({ header, studentInfo, content, styles = {}, 
             ...styles
         },
         defaultStyle: {
-            font: 'Roboto'
+            font: 'Sarabun'
         }
     }
 
@@ -812,7 +812,7 @@ export function buildDocDefinitionLegacy({ header, studentInfo, content, footer,
             ...styles
         },
         defaultStyle: {
-            font: 'Roboto'
+            font: 'Sarabun'
         }
     }
 }

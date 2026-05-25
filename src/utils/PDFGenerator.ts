@@ -5,11 +5,11 @@ import { getReportBuilder, getReportTypes as getTypes } from './PDFStructor'
 // Server-side font setup for pdfmake (using local fonts in assets/fonts)
 const fontsDir = path.resolve(process.cwd(), 'src/assets/fonts')
 pdfMake.addFonts({
-    Roboto: {
-        normal: path.join(fontsDir, 'Roboto-Regular.ttf'),
-        bold: path.join(fontsDir, 'Roboto-Medium.ttf'),
-        italics: path.join(fontsDir, 'Roboto-Italic.ttf'),
-        bolditalics: path.join(fontsDir, 'Roboto-MediumItalic.ttf')
+    Sarabun: {
+        normal: path.join(fontsDir, 'Sarabun-Regular.ttf'),
+        bold: path.join(fontsDir, 'Sarabun-Medium.ttf'),
+        italics: path.join(fontsDir, 'Sarabun-Italic.ttf'),
+        bolditalics: path.join(fontsDir, 'Sarabun-MediumItalic.ttf')
     }
 })
 // Block all external URL access — method exists at runtime but is missing from @types/pdfmake

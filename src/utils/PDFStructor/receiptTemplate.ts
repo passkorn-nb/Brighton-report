@@ -24,6 +24,26 @@ function loadLogoBase64(): string | null {
     return cachedLogo
 }
 
+const SIGNATURE_PATH = path.resolve(process.cwd(), 'src/assets/images/signature.png')
+let cachedSignature: string | null | undefined
+
+function loadSignatureBase64(): string | null {
+    if (cachedSignature !== undefined) return cachedSignature
+    try {
+        if (fs.existsSync(SIGNATURE_PATH)) {
+            logger.info(`Loading signature from ${SIGNATURE_PATH}`)
+            const buf = fs.readFileSync(SIGNATURE_PATH)
+            cachedSignature = `data:image/png;base64,${buf.toString('base64')}`
+        } else {
+            logger.warn(`Signature file not found at ${SIGNATURE_PATH}, falling back to blank`)
+            cachedSignature = null
+        }
+    } catch {
+        cachedSignature = null
+    }
+    return cachedSignature
+}
+
 function formatReceiptAmount(value: any): string {
     if (value == null || isNaN(value)) return ''
     const n = Number(value)
@@ -269,7 +289,8 @@ export function createReceiptNotes() {
 }
 
 export function createReceiptSignatures(data: any = {}) {
-    const { collectorName = '', authorisedSignature = '', authorisedTitle = 'Head of Finance and Accounting' } = data
+    const { collectorName = '', authorisedTitle = 'Head of Finance and Accounting' } = data
+    const signatureImg = loadSignatureBase64()
 
     const boxLayout = {
         hLineWidth: () => 0.5,
@@ -277,6 +298,10 @@ export function createReceiptSignatures(data: any = {}) {
         hLineColor: () => '#000000',
         vLineColor: () => '#000000'
     }
+
+    const authorisedCell: any = signatureImg
+        ? { image: signatureImg, fit: [70, 30], alignment: 'center', margin: [0, 4, 0, 4] }
+        : { text: ' ', style: 'signatureName', alignment: 'center', margin: [0, 8, 0, 8] }
 
     return {
         columns: [
@@ -307,19 +332,7 @@ export function createReceiptSignatures(data: any = {}) {
                 width: '*',
                 stack: [
                     {
-                        table: {
-                            widths: ['*'],
-                            body: [
-                                [
-                                    {
-                                        text: authorisedSignature || ' ',
-                                        style: 'signatureName',
-                                        alignment: 'center',
-                                        margin: [0, 8, 0, 8]
-                                    }
-                                ]
-                            ]
-                        },
+                        table: { widths: ['*'], body: [[authorisedCell]] },
                         layout: boxLayout,
                         margin: [40, 0, 40, 6]
                     },
@@ -427,6 +440,6 @@ export function buildReceiptDocDefinition({ header, infoBox, content, footer }: 
         content: [header, infoBox, ...content].filter(Boolean),
         footer: footer || createReceiptFooter(),
         styles: getReceiptStyles(),
-        defaultStyle: { font: 'Roboto' }
+        defaultStyle: { font: 'Sarabun' }
     }
 }
