@@ -553,11 +553,11 @@ export function getBaseStyles() {
             color: '#000000'
         },
         addressText: {
-            fontSize: 6.5,
+            fontSize: 6,
             color: '#333333'
         },
         invoiceTitle: {
-            fontSize: 22,
+            fontSize: 20,
             bold: true,
             color: '#000000'
         },
@@ -598,7 +598,7 @@ export function getBaseStyles() {
             color: '#000000'
         },
         noteText: {
-            fontSize: 6.5,
+            fontSize: 6,
             color: '#333333'
         },
         paymentTitle: {
@@ -607,15 +607,15 @@ export function getBaseStyles() {
             color: '#000000'
         },
         paymentText: {
-            fontSize: 7.5,
+            fontSize: 8.5,
             color: '#000000'
         },
         bankDetailLabel: {
-            fontSize: 7.5,
+            fontSize: 8.5,
             color: '#000000'
         },
         bankDetailValue: {
-            fontSize: 7.5,
+            fontSize: 8.5,
             color: '#000000'
         },
         signatureName: {

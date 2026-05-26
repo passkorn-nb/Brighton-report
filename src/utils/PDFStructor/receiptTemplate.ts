@@ -374,12 +374,12 @@ export function getReceiptStyles() {
             color: '#000000'
         },
         receiptTitle: {
-            fontSize: 26,
+            fontSize: 22,
             bold: true,
             color: '#000000'
         },
         paymentMethodLine: {
-            fontSize: 11,
+            fontSize: 10,
             color: '#000000'
         },
         receiptTotalWords: {
@@ -427,7 +427,7 @@ export function getReceiptStyles() {
             color: '#000000'
         },
         footerText: {
-            fontSize: 6.5,
+            fontSize: 7,
             color: '#333333'
         }
     }
