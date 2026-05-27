@@ -86,23 +86,37 @@ export function createStudentInfo(data: any = {}) {
         invoiceNo = '',
         invoiceDate = dayjs().format('DD MMMM YYYY'),
         dueDate = '',
-        schoolYear = ''
+        schoolYear = '',
+        isExternal = false
     } = data
 
-    const leftRows = [
-        ['Student ID no.', studentId],
-        ['Student name', studentName],
-        ['Year group', formatYearGroupLabel(yearGroup)],
-        ['Contact name', contactName],
-        ['Address', address]
-    ]
+    const leftRows = isExternal
+        ? [
+              ['Client ID', studentId],
+              ['Client Name', studentName],
+              ['Contact name', contactName],
+              ['Address', address]
+          ]
+        : [
+              ['Student ID no.', studentId],
+              ['Student name', studentName],
+              ['Year group', formatYearGroupLabel(yearGroup)],
+              ['Contact name', contactName],
+              ['Address', address]
+          ]
 
-    const rightRows = [
-        ['Invoice no.', invoiceNo],
-        ['Invoice date', invoiceDate],
-        ['Due date', dueDate],
-        ['School year', schoolYear]
-    ]
+    const rightRows = isExternal
+        ? [
+              ['Invoice no.', invoiceNo],
+              ['Invoice date', invoiceDate],
+              ['Due date', dueDate]
+          ]
+        : [
+              ['Invoice no.', invoiceNo],
+              ['Invoice date', invoiceDate],
+              ['Due date', dueDate],
+              ['School year', schoolYear]
+          ]
 
     // Build a table with 4 columns: label, value, label, value
     const maxRows = Math.max(leftRows.length, rightRows.length)
@@ -138,90 +152,22 @@ export function createStudentInfo(data: any = {}) {
 }
 
 // ---------------------------------------------------------------------------
-// Student info variant for external students (no Student ID, no Year group)
-// ---------------------------------------------------------------------------
-export function createStudentInfoExternal(data: any = {}) {
-    const {
-        studentId = '',
-        studentName = '',
-        contactName = '',
-        address = '',
-        invoiceNo = '',
-        invoiceDate = dayjs().format('DD MMMM YYYY'),
-        dueDate = ''
-    } = data
-
-    const leftRows = [
-        ['Client ID', studentId],
-        ['Client Name', studentName],
-        ['Contact name', contactName],
-        ['Address', address]
-    ]
-
-    const rightRows = [
-        ['Invoice no.', invoiceNo],
-        ['Invoice date', invoiceDate],
-        ['Due date', dueDate]
-    ]
-
-    const maxRows = Math.max(leftRows.length, rightRows.length)
-    const body: any[] = []
-    for (let i = 0; i < maxRows; i++) {
-        const left = leftRows[i] || ['', '']
-        const right = rightRows[i] || ['', '']
-        body.push([
-            { text: left[0], style: 'infoLabel', border: [false, false, false, false] },
-            { text: left[1], style: 'infoValue', border: [false, false, false, false], ...thaiFont(left[1]) },
-            { text: right[0], style: 'infoLabel', border: [false, false, false, false] },
-            {
-                text: right[1],
-                style: 'infoValue',
-                border: [false, false, false, false],
-                alignment: 'right',
-                ...thaiFont(right[1])
-            }
-        ])
-    }
-
-    return {
-        table: {
-            widths: [85, '*', 75, 'auto'],
-            body
-        },
-        layout: 'noBorders',
-        margin: [0, 0, 0, 4]
-    }
-}
-
-// ---------------------------------------------------------------------------
 // Fee table – No. | Description | Amount (THB) with total row at bottom
 // ---------------------------------------------------------------------------
 export function createFeeTable(items: any[] = [], options: any = {}) {
-    const { showNo = true, amountInWords = '', totalAmount = null, minRows = 5 } = options
+    const { amountInWords = '', totalAmount = null, minRows = 5 } = options
 
-    // Calculate total if not provided
     const total =
         totalAmount != null ? totalAmount : items.reduce((sum: number, item: any) => sum + (item.amount || 0), 0)
 
-    // Header row
-    const headerRow: any[] = []
-    const widths: any[] = []
+    const headerRow: any[] = [
+        { text: 'No.', style: 'tableHeader', alignment: 'center' },
+        { text: 'Description', style: 'tableHeader' },
+        { text: 'Amount\n(THB)', style: 'tableHeader', alignment: 'right' }
+    ]
+    const widths: any[] = [30, '*', 90]
 
-    if (showNo) {
-        headerRow.push({ text: 'No.', style: 'tableHeader', alignment: 'center' })
-        widths.push(30)
-    }
-    headerRow.push({ text: 'Description', style: 'tableHeader' })
-    widths.push('*')
-    headerRow.push({ text: 'Amount\n(THB)', style: 'tableHeader', alignment: 'right' })
-    widths.push(90)
-
-    // Data rows
     const bodyRows: any[] = items.map((item: any, index: number) => {
-        const row: any[] = []
-        if (showNo) {
-            row.push({ text: String(index + 1), alignment: 'center', style: 'tableCell' })
-        }
         const cellStack: any[] = []
         if (item.name) cellStack.push({ text: item.name, style: 'tableCell', ...thaiFont(item.name) })
         if (item.description)
@@ -231,52 +177,37 @@ export function createFeeTable(items: any[] = [], options: any = {}) {
                 margin: [0, 1, 0, 0],
                 ...thaiFont(item.description)
             })
-        row.push(cellStack.length === 0 ? { text: '', style: 'tableCell' } : { stack: cellStack })
-        row.push({ text: formatCurrency(item.amount), alignment: 'right', style: 'tableCell' })
-        return row
+        return [
+            { text: String(index + 1), alignment: 'center', style: 'tableCell' },
+            cellStack.length === 0 ? { text: '', style: 'tableCell' } : { stack: cellStack },
+            { text: formatCurrency(item.amount), alignment: 'right', style: 'tableCell' }
+        ]
     })
 
-    // Empty rows to fill minimum height
     const emptyCount = Math.max(0, minRows - items.length)
     for (let i = 0; i < emptyCount; i++) {
-        const emptyRow: any[] = []
-        if (showNo) emptyRow.push({ text: '', style: 'tableCell' })
-        emptyRow.push({ text: '', style: 'tableCell' })
-        emptyRow.push({ text: '', style: 'tableCell' })
-        bodyRows.push(emptyRow)
+        bodyRows.push([
+            { text: '', style: 'tableCell' },
+            { text: '', style: 'tableCell' },
+            { text: '', style: 'tableCell' }
+        ])
     }
 
-    // Total row
-    const totalRow: any[] = []
-    if (showNo) {
-        // Left cell (spans No. + Description): amountInWords [...] TOTAL (TOTAL pinned right)
-        totalRow.push({
+    const totalRow: any[] = [
+        {
             columns: [
                 { text: amountInWords || '', style: 'totalWordsCell', width: '*' },
                 { text: 'TOTAL', style: 'totalLabel', width: 'auto' }
             ],
             colSpan: 2
-        })
-        totalRow.push({}) // empty cell consumed by colSpan
-        // Right cell (Amount column): numeric only
-        totalRow.push({
+        },
+        {},
+        {
             text: formatCurrency(total),
             style: 'totalValue',
             alignment: 'right'
-        })
-    } else {
-        // EXT — keep legacy layout
-        totalRow.push({
-            text: amountInWords || '',
-            style: 'totalWordsCell'
-        })
-        totalRow.push({
-            columns: [
-                { text: 'TOTAL', style: 'totalLabel', width: 'auto' },
-                { text: formatCurrency(total), style: 'totalValue', width: '*', alignment: 'right' }
-            ]
-        })
-    }
+        }
+    ]
 
     return {
         table: {
@@ -302,13 +233,6 @@ export function createFeeTable(items: any[] = [], options: any = {}) {
         },
         margin: [0, 0, 0, 0]
     }
-}
-
-// ---------------------------------------------------------------------------
-// Fee table variant without No. column (for external students)
-// ---------------------------------------------------------------------------
-export function createFeeTableNoNumber(items: any[] = [], options: any = {}) {
-    return createFeeTable(items, { ...options, showNo: false })
 }
 
 // ---------------------------------------------------------------------------
@@ -687,191 +611,4 @@ export function buildDocDefinition({ header, studentInfo, content, styles = {}, 
     }
 
     return docDef
-}
-
-// ===========================================================================
-// LEGACY VARIANTS – preserve pre-redesign behavior for HOLIDAY_CAMP_EXTERNAL.
-// Do not modify these; they pin External Invoice to its original look.
-// ===========================================================================
-
-export function createHeaderLegacy(data: any = {}) {
-    const {
-        schoolName = "KING'S COLLEGE INTERNATIONAL SCHOOL",
-        schoolLocation = 'BANGKOK',
-        address = '727 Ratchadapisek Road, Bang Phongphang, Yannawa, Bangkok 10120, Thailand',
-        contactLine = '+66 (0) 2481 9955, finance@kingsbangkok.ac.th, www.kingsbangkok.ac.th',
-        logoBase64
-    } = data
-
-    const logo = logoBase64 || loadLogoBase64()
-    const stack: any[] = []
-
-    if (logo) {
-        stack.push({ image: logo, fit: [90, 90], alignment: 'center', margin: [0, 0, 0, 6] })
-    }
-    stack.push({ text: schoolName, style: 'schoolName', alignment: 'center', ...thaiFont(schoolName) })
-    stack.push({
-        text: schoolLocation,
-        style: 'schoolLocation',
-        alignment: 'center',
-        margin: [0, 0, 0, 1],
-        ...thaiFont(schoolLocation)
-    })
-    stack.push({ text: address, style: 'addressText', alignment: 'center' })
-    stack.push({ text: contactLine, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 8] })
-    stack.push({ text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, 0, 0, 8] })
-
-    return { stack }
-}
-
-export function createPaymentMethodsLegacy(data: any = {}) {
-    const {
-        accountName = "King's College International School Bangkok",
-        accountNumber = '041-1-12977-2',
-        bankName = 'Kasikorn Bank (bank code 004)',
-        branch = 'Sathu Pradit (branch code 0041)',
-        swiftCode = 'KASITHBK',
-        bankAddress = '1 Soi Rat Burana 22/1, Rat Burana Road, Bangkok 10140',
-        billerIdNo = '099-4-00259063-3',
-        referenceNo1 = '',
-        referenceNo2 = '',
-        qrCodeBase64 = '',
-        financeEmail = 'finance@kingsbangkok.ac.th',
-        bankFeeRate = '1.3%'
-    } = data
-
-    const stack: any[] = [{ text: 'Payment methods', style: 'paymentTitle', margin: [0, 0, 0, 5] }]
-
-    stack.push({
-        text: [
-            { text: '-  Cheque: ', bold: false },
-            {
-                text: `Cheques must be made payable to ${accountName} and marked A/C Payee Only. Please deliver cheques to the Finance & Accounting Department.`,
-                bold: false
-            }
-        ],
-        style: 'paymentText',
-        margin: [0, 0, 0, 5]
-    })
-
-    stack.push({
-        text: [
-            { text: '-  Bank Transfer: ', bold: false },
-            {
-                text: `Further bank details are provided below. Kindly email your child's name, ID number, and invoice number to ${financeEmail} with proof of payment attached upon completion of the transfer process. Please ensure that your payment covers all bank charges.`,
-                bold: false
-            }
-        ],
-        style: 'paymentText',
-        margin: [0, 0, 0, 3]
-    })
-
-    const bankDetails = [
-        ['Account name', accountName],
-        ['Account number', accountNumber],
-        ['Bank name', bankName],
-        ['Branch', branch],
-        ['Swift code', swiftCode],
-        ['Bank address', bankAddress]
-    ]
-
-    stack.push({
-        table: {
-            widths: [100, '*'],
-            body: bankDetails.map(([label, value]) => [
-                { text: label, style: 'bankDetailLabel', border: [false, false, false, false] },
-                { text: value, style: 'bankDetailValue', border: [false, false, false, false] }
-            ])
-        },
-        layout: 'noBorders',
-        margin: [80, 0, 0, 5]
-    })
-
-    stack.push({
-        text: [
-            { text: '-  ' },
-            {
-                text: `Credit card: The online payment link will be provided on the parent portal. Visa & Mastercard issued by local banks in Thailand are accepted. Kindly note that a ${bankFeeRate} bank fee will be applied to individual online payment transaction.`
-            }
-        ],
-        style: 'paymentText',
-        margin: [0, 0, 0, 5]
-    })
-
-    stack.push({
-        text: [
-            { text: '-  ' },
-            {
-                text: 'On-site credit card payment: Credit cards issued by both local and overseas banks (VISA, Mastercard, JCB, UnionPay, and Alipay) are accepted. Please note that a bank fee may be applied, subject to your bank. The applicable rate can be viewed at the Cashier.'
-            }
-        ],
-        style: 'paymentText',
-        margin: [0, 0, 0, 0]
-    })
-
-    return { stack, margin: [0, 0, 0, 4] }
-}
-
-export function createSignatureSectionLegacy(data: any = {}) {
-    const { preparedBy = '', showSignature = true } = data
-    const signatureImg = showSignature ? loadSignatureBase64() : null
-
-    const authorisedNode: any = signatureImg
-        ? { image: signatureImg, fit: [70, 30], alignment: 'center', margin: [0, 0, 0, 5] }
-        : { text: '', style: 'signatureName', alignment: 'center', margin: [0, 20, 0, 5] }
-
-    return {
-        columns: [
-            {
-                width: '*',
-                stack: [
-                    {
-                        text: preparedBy || '',
-                        style: 'signatureName',
-                        alignment: 'center',
-                        margin: [0, 20, 0, 5],
-                        ...thaiFont(preparedBy)
-                    },
-                    {
-                        canvas: [{ type: 'line', x1: 20, y1: 0, x2: 200, y2: 0, lineWidth: 1, lineColor: '#000000' }]
-                    },
-                    { text: 'Prepared by', style: 'signatureLabel', alignment: 'center', margin: [0, 5, 0, 0] }
-                ],
-                alignment: 'center'
-            },
-            {
-                width: '*',
-                stack: [
-                    authorisedNode,
-                    {
-                        canvas: [{ type: 'line', x1: 20, y1: 0, x2: 200, y2: 0, lineWidth: 1, lineColor: '#000000' }]
-                    },
-                    {
-                        text: 'Authorised officer',
-                        style: 'signatureLabel',
-                        alignment: 'center',
-                        margin: [0, 5, 0, 0]
-                    }
-                ],
-                alignment: 'center'
-            }
-        ],
-        margin: [0, 8, 0, 0]
-    }
-}
-
-export function buildDocDefinitionLegacy({ header, studentInfo, content, footer, styles = {} }: any) {
-    return {
-        pageSize: 'A4' as const,
-        pageMargins: [40, 28, 40, 40] as [number, number, number, number],
-        content: [header, studentInfo, ...content].filter(Boolean),
-        footer: footer || createPageFooter(),
-        styles: {
-            ...getBaseStyles(),
-            ...styles
-        },
-        defaultStyle: {
-            font: DEFAULT_FONT
-        }
-    }
 }
