@@ -273,7 +273,8 @@ export function createPaymentMethods(data: any = {}) {
         referenceNo2 = '',
         qrCodeBase64 = '',
         financeEmail = 'finance@kingsbangkok.ac.th',
-        bankFeeRate = '1.3%'
+        bankFeeRate = '1.3%',
+        isExternal = false
     } = data
 
     const stack: any[] = [{ text: 'Payment methods', style: 'paymentTitle', margin: [0, 0, 0, 5] }]
@@ -326,66 +327,68 @@ export function createPaymentMethods(data: any = {}) {
         margin: [80, 0, 0, 5]
     })
 
-    // 3. Bill Payment
-    const billPaymentText = `Bill Payment via Mobile Banking, Internet Banking, ATM or Bank Counter: Please use the QR code provided below to scan for payment. Kindly note that bank charges will apply to payments made via ATM or at the bank counter.`
-    stack.push({
-        text: [{ text: '-  ' }, { text: billPaymentText }],
-        style: 'paymentText',
-        margin: [0, 0, 0, 3]
-    })
+    if (!isExternal) {
+        // 3. Bill Payment
+        const billPaymentText = `Bill Payment via Mobile Banking, Internet Banking, ATM or Bank Counter: Please use the QR code provided below to scan for payment. Kindly note that bank charges will apply to payments made via ATM or at the bank counter.`
+        stack.push({
+            text: [{ text: '-  ' }, { text: billPaymentText }],
+            style: 'paymentText',
+            margin: [0, 0, 0, 3]
+        })
 
-    // Bill payment details + QR code
-    const billRows = [
-        ['Biller ID no.', billerIdNo],
-        ['Reference no. (Ref 1)', referenceNo1],
-        ['Reference no. (Ref 2)', referenceNo2]
-    ]
-
-    const billContent: any = {
-        columns: [
-            {
-                width: '*',
-                table: {
-                    widths: [120, '*'],
-                    body: billRows.map(([label, value]) => [
-                        { text: label, style: 'bankDetailLabel', border: [false, false, false, false] },
-                        { text: value, style: 'bankDetailValue', border: [false, false, false, false] }
-                    ])
-                },
-                layout: 'noBorders',
-                margin: [80, 0, 0, 0]
-            }
+        // Bill payment details + QR code
+        const billRows = [
+            ['Biller ID no.', billerIdNo],
+            ['Reference no. (Ref 1)', referenceNo1],
+            ['Reference no. (Ref 2)', referenceNo2]
         ]
-    }
 
-    // Add QR code image (base64)
-    if (qrCodeBase64) {
-        billContent.columns.push({
-            width: 90,
-            stack: [
+        const billContent: any = {
+            columns: [
                 {
-                    image: qrCodeBase64,
-                    fit: [50, 50],
-                    alignment: 'center'
+                    width: '*',
+                    table: {
+                        widths: [120, '*'],
+                        body: billRows.map(([label, value]) => [
+                            { text: label, style: 'bankDetailLabel', border: [false, false, false, false] },
+                            { text: value, style: 'bankDetailValue', border: [false, false, false, false] }
+                        ])
+                    },
+                    layout: 'noBorders',
+                    margin: [80, 0, 0, 0]
+                }
+            ]
+        }
+
+        // Add QR code image (base64)
+        if (qrCodeBase64) {
+            billContent.columns.push({
+                width: 90,
+                stack: [
+                    {
+                        image: qrCodeBase64,
+                        fit: [50, 50],
+                        alignment: 'center'
+                    }
+                ],
+                margin: [-300, -8, 0, 0]
+            })
+        }
+
+        stack.push({ ...billContent, margin: [0, 0, 0, 5] })
+
+        // 4. Credit card
+        stack.push({
+            text: [
+                { text: '-  ' },
+                {
+                    text: `Credit card: The online payment link will be provided on the parent portal. Visa & Mastercard issued by local banks in Thailand are accepted. Kindly note that a ${bankFeeRate} bank fee will be applied to individual online payment transaction.`
                 }
             ],
-            margin: [-300, -8, 0, 0]
+            style: 'paymentText',
+            margin: [0, 0, 0, 5]
         })
     }
-
-    stack.push({ ...billContent, margin: [0, 0, 0, 5] })
-
-    // 4. Credit card
-    stack.push({
-        text: [
-            { text: '-  ' },
-            {
-                text: `Credit card: The online payment link will be provided on the parent portal. Visa & Mastercard issued by local banks in Thailand are accepted. Kindly note that a ${bankFeeRate} bank fee will be applied to individual online payment transaction.`
-            }
-        ],
-        style: 'paymentText',
-        margin: [0, 0, 0, 5]
-    })
 
     // 5. On-site credit card payment
     stack.push({

@@ -23,7 +23,7 @@ export function buildHolidayCampExternalReport(data: any = {}) {
     })
 
     const latePaymentNote = createLatePaymentNote(data.latePayment)
-    const paymentMethods = createPaymentMethods(data.paymentMethods)
+    const paymentMethods = createPaymentMethods({ ...data.paymentMethods, isExternal: true })
     const signature = createSignatureSection(data.signature)
 
     return buildDocDefinition({
