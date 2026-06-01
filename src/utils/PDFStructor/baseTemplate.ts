@@ -282,9 +282,9 @@ export function createPaymentMethods(data: any = {}) {
     // 1. Cheque
     stack.push({
         text: [
-            { text: '-  Cheque: ', bold: false },
+            { text: '-  Cashier Cheque: ', bold: false },
             {
-                text: `Cheques must be made payable to ${accountName} and marked A/C Payee Only. Please deliver cheques to the Finance & Accounting Department.`,
+                text: `Cashier cheques must be made payable to ${accountName} and marked A/C Payee Only. Please deliver cashier cheques to the Finance & Accounting Department.`,
                 bold: false
             }
         ],
