@@ -124,10 +124,10 @@ export function createReceiptInfoBox(data: any = {}, isExternal = false) {
             body
         },
         layout: {
-            hLineWidth: (i: number, node: any) => (i === 0 || i === node.table.body.length ? 1 : 0),
-            vLineWidth: (i: number, node: any) => (i === 0 || i === node.table.widths.length ? 1 : 0),
-            hLineColor: () => '#000000',
-            vLineColor: () => '#000000',
+            hLineWidth: (i: number, node: any) => (i === 0 || i === node.table.body.length ? 0.5 : 0),
+            vLineWidth: (i: number, node: any) => (i === 0 || i === node.table.widths.length ? 0.5 : 0),
+            hLineColor: () => '#ADABAB',
+            vLineColor: () => '#ADABAB',
             paddingLeft: () => 6,
             paddingRight: () => 6,
             paddingTop: () => 4,
@@ -242,15 +242,15 @@ export function createReceiptItemsTable(items: any[] = [], options: any = {}) {
         },
         layout: {
             hLineWidth: (i: number, node: any) => {
-                if (i === 0 || i === 1) return 1
-                if (i === node.table.body.length) return 1
-                if (i === node.table.body.length - 1) return 1
-                if (overpaymentAmount && Number(overpaymentAmount) > 0 && i === node.table.body.length - 2) return 1
+                if (i === 0 || i === 1) return 0.5
+                if (i === node.table.body.length) return 0.5
+                if (i === node.table.body.length - 1) return 0.5
+                if (overpaymentAmount && Number(overpaymentAmount) > 0 && i === node.table.body.length - 2) return 0.5
                 return 0
             },
-            vLineWidth: () => 1,
-            hLineColor: () => '#000000',
-            vLineColor: () => '#000000',
+            vLineWidth: () => 0.5,
+            hLineColor: () => '#ADABAB',
+            vLineColor: () => '#ADABAB',
             paddingLeft: () => 6,
             paddingRight: () => 6,
             paddingTop: () => 4,
@@ -293,8 +293,8 @@ export function createReceiptSignatures(data: any = {}) {
     const boxLayout = {
         hLineWidth: () => 0.5,
         vLineWidth: () => 0.5,
-        hLineColor: () => '#000000',
-        vLineColor: () => '#000000'
+        hLineColor: () => '#ADABAB',
+        vLineColor: () => '#ADABAB'
     }
 
     const authorisedCell: any = signatureImg

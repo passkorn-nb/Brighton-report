@@ -140,8 +140,8 @@ export function createStudentInfo(data: any = {}) {
         layout: {
             hLineWidth: (i: number, node: any) => (i === 0 || i === node.table.body.length ? 0.5 : 0),
             vLineWidth: (i: number, node: any) => (i === 0 || i === node.table.widths.length ? 0.5 : 0),
-            hLineColor: () => '#000000',
-            vLineColor: () => '#000000',
+            hLineColor: () => '#ADABAB',
+            vLineColor: () => '#ADABAB',
             paddingLeft: () => 6,
             paddingRight: () => 6,
             paddingTop: () => 5,
@@ -218,14 +218,14 @@ export function createFeeTable(items: any[] = [], options: any = {}) {
         layout: {
             hLineWidth: (i: number, node: any) => {
                 const rows = node.table.body.length
-                return i === 0 || i === 1 || i === rows - 1 || i === rows ? 1 : 0
+                return i === 0 || i === 1 || i === rows - 1 || i === rows ? 0.5 : 0
             },
             vLineWidth: (i: number, node: any) => {
                 const cols = node.table.widths.length
-                return i === 0 || i === cols - 1 || i === cols ? 1 : 0
+                return i === 0 || i === cols - 1 || i === cols ? 0.5 : 0
             },
-            hLineColor: () => '#000000',
-            vLineColor: () => '#000000',
+            hLineColor: () => '#ADABAB',
+            vLineColor: () => '#ADABAB',
             paddingLeft: () => 6,
             paddingRight: () => 6,
             paddingTop: () => 4,
