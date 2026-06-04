@@ -196,7 +196,7 @@ export function createFeeTable(items: any[] = [], options: any = {}) {
     const totalRow: any[] = [
         {
             columns: [
-                { text: amountInWords || '', style: 'totalWordsCell', width: '*' },
+                { text: String(amountInWords || '').toUpperCase() , style: 'totalWordsCell', width: '*' },
                 { text: 'TOTAL', style: 'totalLabel', width: 'auto' }
             ],
             colSpan: 2

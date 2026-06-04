@@ -17,7 +17,7 @@ export function buildReceiptReport(data: any = {}) {
     const itemsTable = createReceiptItemsTable(data.items || [], {
         overpaymentAmount: data.overpaymentAmount ?? 0,
         totalAmount: data.totalAmount,
-        amountInWords: data.amountInWords || '',
+        amountInWords: String(data.amountInWords || '').toUpperCase(),
         creditNotes: data.creditNotes || []
     })
 
