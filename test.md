@@ -316,6 +316,34 @@ Content-Type: application/json
 
 ---
 
+## ACKNOWLEDGEMENT
+
+```json
+{
+    "reportType": "ACKNOWLEDGEMENT",
+    "data": {
+        "studentIdNo": "KC20250276",
+        "studentName": "Aria Peterson",
+        "contactName": "John Peterson",
+        "receiptNo": "R-CC-2026-00001",
+        "receiptDate": "13/07/2026",
+        "yearGroup": "PRE-NURSERY",
+        "schoolYear": "2025/2026",
+        "rows": [
+            { "no": 1, "invoiceNo": "INV-2025-02761", "invoiceAmount": 78000, "cardFee": 1014, "received": 78000 },
+            { "no": 2, "invoiceNo": "INV-2025-02762", "invoiceAmount": 7500, "cardFee": 97.5, "received": 7500 }
+        ],
+        "overpaymentAmount": 500,
+        "grandTotal": 86000,
+        "amountInWords": "EIGHTY-SIX THOUSAND BAHT",
+        "cardBankName": "KBank EDC",
+        "cashierName": "test cashier"
+    }
+}
+```
+
+---
+
 ## List Report Types
 
 ```

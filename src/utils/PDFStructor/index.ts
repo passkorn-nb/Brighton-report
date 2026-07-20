@@ -7,6 +7,7 @@ import { buildHolidayCampReport } from './holidayCampReport'
 import { buildHolidayCampExternalReport } from './holidayCampExternalReport'
 import { buildStudentActivitiesReport } from './studentActivitiesReport'
 import { buildReceiptReport } from './receiptReport'
+import { buildAcknowledgementReport } from './acknowledgementReport'
 
 export enum ReportType {
     TUITION_FEE = 'TUITION_FEE',
@@ -17,7 +18,8 @@ export enum ReportType {
     HOLIDAY_CAMP = 'HOLIDAY_CAMP',
     HOLIDAY_CAMP_EXTERNAL = 'HOLIDAY_CAMP_EXTERNAL',
     STUDENT_ACTIVITIES = 'STUDENT_ACTIVITIES',
-    RECEIPT = 'RECEIPT'
+    RECEIPT = 'RECEIPT',
+    ACKNOWLEDGEMENT = 'ACKNOWLEDGEMENT'
 }
 
 /**
@@ -70,6 +72,11 @@ export const REPORT_TYPES: Record<string, { label: string; description: string; 
         label: 'Receipt',
         description: 'Payment receipt with invoice/credit-note breakdown, overpayment, and signatures',
         builder: buildReceiptReport
+    },
+    [ReportType.ACKNOWLEDGEMENT]: {
+        label: 'Acknowledgement of School Fee Payment',
+        description: 'Cashier acknowledgement (2 copies)',
+        builder: buildAcknowledgementReport
     }
 }
 
