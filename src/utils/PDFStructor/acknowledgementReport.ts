@@ -4,6 +4,7 @@ import {
     createAcknowledgementHeader,
     createAcknowledgementInfoBox,
     createAcknowledgementItemsTable,
+    createAcknowledgementFootnotes,
     createCreditCardLine,
     createAcknowledgementSignatures
 } from './acknowledgementTemplate'
@@ -16,10 +17,14 @@ function buildAcknowledgementCopyContent(data: any, copyLabel: string): any[] {
         grandTotal: data.grandTotal,
         amountInWords: data.amountInWords
     })
+    const footnotes = createAcknowledgementFootnotes()
     const creditCardLine = createCreditCardLine({ cardBankName: data.cardBankName })
-    const signatures = createAcknowledgementSignatures({ cashierName: data.cashierName })
+    const signatures = createAcknowledgementSignatures({
+        cashierName: data.cashierName,
+        authorisedName: data.authorisedName
+    })
 
-    return [header, infoBox, itemsTable, creditCardLine, signatures]
+    return [header, infoBox, itemsTable, footnotes, creditCardLine, signatures]
 }
 
 export function buildAcknowledgementReport(data: any = {}) {

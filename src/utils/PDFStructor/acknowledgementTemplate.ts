@@ -5,6 +5,11 @@ import { formatCurrency, thaiFont } from './baseTemplate'
 const LOGO_PATH = path.resolve(process.cwd(), 'src/assets/images/kcis-logo.png')
 let cachedLogo: string | null | undefined
 
+const GRID_GRAY = '#ADABAB'
+const HEADER_FILL = '#F2F2F2'
+const COPY_LABEL_GRAY = '#808080'
+const FOOTNOTE_GRAY = '#595959'
+
 function loadLogoBase64(): string | null {
     if (cachedLogo !== undefined) return cachedLogo
     try {
@@ -32,16 +37,25 @@ export function createAcknowledgementHeader(copyLabel = '') {
     const logo = loadLogoBase64()
     const stack: any[] = []
 
+    // Small grey copy label anchored to the top-right corner.
+    stack.push({
+        text: copyLabel,
+        color: COPY_LABEL_GRAY,
+        fontSize: 9,
+        bold: true,
+        alignment: 'right',
+        margin: [0, 0, 0, 2]
+    })
+
     if (logo) {
         stack.push({ image: logo, fit: [150, 150], alignment: 'center', margin: [0, 0, 0, 6] })
     }
     stack.push({
-        text: 'ACKNOWLEDGEMENT OF SCHOOL FEE PAYMENT',
+        text: 'Acknowledgement of School Fee Payment',
         style: 'receiptTitle',
         alignment: 'center',
-        margin: [0, 0, 0, 4]
+        margin: [0, 0, 0, 12]
     })
-    stack.push({ text: `Copy: ${copyLabel}`, style: 'infoLabel', alignment: 'center', margin: [0, 0, 0, 16] })
 
     return { stack }
 }
@@ -75,23 +89,23 @@ export function createAcknowledgementInfoBox(data: any = {}) {
         const left = leftRows[i] || ['', '']
         const right = rightRows[i] || ['', '']
         body.push([
-            { text: left[0], style: 'infoLabel' },
+            { text: left[0] ? `${left[0]}:` : '', style: 'infoLabel', bold: true },
             { text: left[1], style: 'infoValue', ...thaiFont(left[1]) },
-            { text: right[0], style: 'infoLabel' },
-            { text: right[1], style: 'infoValue', alignment: 'right', noWrap: true, ...thaiFont(right[1]) }
+            { text: right[0] ? `${right[0]}:` : '', style: 'infoLabel', bold: true },
+            { text: right[1], style: 'infoValue', ...thaiFont(right[1]) }
         ])
     }
 
     return {
         table: {
-            widths: [70, '*', 70, 85],
+            widths: [78, '*', 72, 120],
             body
         },
         layout: {
             hLineWidth: (i: number, node: any) => (i === 0 || i === node.table.body.length ? 0.5 : 0),
             vLineWidth: (i: number, node: any) => (i === 0 || i === node.table.widths.length ? 0.5 : 0),
-            hLineColor: () => '#ADABAB',
-            vLineColor: () => '#ADABAB',
+            hLineColor: () => GRID_GRAY,
+            vLineColor: () => GRID_GRAY,
             paddingLeft: () => 6,
             paddingRight: () => 6,
             paddingTop: () => 4,
@@ -102,19 +116,31 @@ export function createAcknowledgementInfoBox(data: any = {}) {
 }
 
 export function createAcknowledgementItemsTable(rows: any[] = [], options: any = {}) {
-    const { overpaymentAmount = 0, grandTotal = null, amountInWords = '', minRows = 10 } = options
+    const { overpaymentAmount = 0, grandTotal = null, amountInWords = '' } = options
 
-    const total =
-        grandTotal != null ? grandTotal : rows.reduce((sum: number, row: any) => sum + (Number(row.received) || 0), 0)
+    const invoiceTotal = rows.reduce((sum: number, row: any) => sum + (Number(row.invoiceAmount) || 0), 0)
+    const cardFeeTotal = rows.reduce((sum: number, row: any) => sum + (Number(row.cardFee) || 0), 0)
+    const receivedTotal =
+        grandTotal != null
+            ? grandTotal
+            : rows.reduce((sum: number, row: any) => sum + (Number(row.received) || 0), 0) + Number(overpaymentAmount || 0)
 
-    const widths = [30, '*', 80, 90, 90]
+    const widths = [30, 80, '*', '*', '*']
+
+    const headerCell = (text: string) => ({
+        text,
+        style: 'tableHeader',
+        bold: true,
+        alignment: 'center',
+        fillColor: HEADER_FILL
+    })
 
     const headerRow: any[] = [
-        { text: 'No.', style: 'tableHeader', alignment: 'center' },
-        { text: 'Invoice no.', style: 'tableHeader', alignment: 'center' },
-        { text: 'Invoice amount', style: 'tableHeader', alignment: 'center' },
-        { text: 'Credit card fee', style: 'tableHeader', alignment: 'center' },
-        { text: 'Received', style: 'tableHeader', alignment: 'center' }
+        headerCell('No.'),
+        headerCell('Invoice no.'),
+        headerCell('Invoice amount\n(THB)'),
+        headerCell('Credit card fee*\n(THB)'),
+        headerCell('Received amount\n(THB)')
     ]
 
     const bodyRows: any[] = rows.map((row: any, index: number) => [
@@ -125,158 +151,120 @@ export function createAcknowledgementItemsTable(rows: any[] = [], options: any =
         { text: formatCurrency(row.received), alignment: 'right', style: 'tableCell' }
     ])
 
-    const emptyCount = Math.max(0, minRows - rows.length)
-    const emptyRows: any[] = []
-    for (let i = 0; i < emptyCount; i++) {
-        emptyRows.push([
-            { text: '', style: 'tableCell' },
-            { text: '', style: 'tableCell' },
-            { text: '', style: 'tableCell' },
-            { text: '', style: 'tableCell' },
-            { text: '', style: 'tableCell' }
-        ])
-    }
-
-    const extraRows: any[] = []
-    if (overpaymentAmount && Number(overpaymentAmount) > 0) {
-        extraRows.push([
-            {
-                text: 'Overpayment amount',
-                style: 'tableCell',
-                colSpan: 4,
-                alignment: 'center',
-                border: [true, true, true, true]
-            },
-            {},
-            {},
-            {},
-            {
-                text: formatCurrency(overpaymentAmount),
-                style: 'tableCell',
-                alignment: 'right',
-                border: [true, true, true, true]
-            }
-        ])
-    }
-
-    const totalRow: any[] = [
+    // Overpayment row is always shown (matches the official form, even when 0.00).
+    const overpaymentRow: any[] = [
         {
-            colSpan: 4,
-            columns: [
-                {
-                    text: amountInWords || '',
-                    style: 'receiptTotalWords',
-                    width: '*'
-                },
-                {
-                    text: 'GRAND TOTAL',
-                    style: 'receiptTotalLabel',
-                    width: 'auto',
-                    alignment: 'right',
-                    margin: [4, 0, 0, 0]
-                }
-            ],
-            border: [true, true, true, true]
+            text: 'Overpayment amount**',
+            style: 'tableCell',
+            bold: true,
+            colSpan: 2
         },
         {},
+        { text: formatCurrency(0), alignment: 'right', style: 'tableCell', bold: true },
+        { text: formatCurrency(0), alignment: 'right', style: 'tableCell', bold: true },
+        { text: formatCurrency(overpaymentAmount), alignment: 'right', style: 'tableCell', bold: true }
+    ]
+
+    // GRAND TOTAL spans two rows: column totals on top, amount-in-words underneath.
+    const grandTotalAmountsRow: any[] = [
+        {
+            text: 'GRAND TOTAL',
+            style: 'receiptTotalLabel',
+            colSpan: 2,
+            rowSpan: 2,
+            margin: [0, 6, 0, 0]
+        },
+        {},
+        { text: formatCurrency(invoiceTotal), style: 'receiptTotalValue', alignment: 'right' },
+        { text: formatCurrency(cardFeeTotal), style: 'receiptTotalValue', alignment: 'right' },
+        { text: formatCurrency(receivedTotal), style: 'receiptTotalValue', alignment: 'right', decoration: 'underline' }
+    ]
+    const grandTotalWordsRow: any[] = [
         {},
         {},
         {
-            text: formatCurrency(total),
-            style: 'receiptTotalValue',
+            text: amountInWords || '',
+            style: 'receiptTotalWords',
+            colSpan: 3,
             alignment: 'right',
-            border: [true, true, true, true]
-        }
+            decoration: 'underline'
+        },
+        {},
+        {}
     ]
+
+    const body = [headerRow, ...bodyRows, overpaymentRow, grandTotalAmountsRow, grandTotalWordsRow]
 
     return {
         table: {
             headerRows: 1,
             widths,
-            body: [headerRow, ...bodyRows, ...emptyRows, ...extraRows, totalRow]
+            body
         },
         layout: {
-            hLineWidth: (i: number, node: any) => {
-                if (i === 0 || i === 1) return 0.5
-                if (i === node.table.body.length) return 0.5
-                if (i === node.table.body.length - 1) return 0.5
-                if (overpaymentAmount && Number(overpaymentAmount) > 0 && i === node.table.body.length - 2) return 0.5
-                return 0
-            },
+            hLineWidth: () => 0.5,
             vLineWidth: () => 0.5,
-            hLineColor: () => '#ADABAB',
-            vLineColor: () => '#ADABAB',
+            hLineColor: () => GRID_GRAY,
+            vLineColor: () => GRID_GRAY,
             paddingLeft: () => 6,
             paddingRight: () => 6,
             paddingTop: () => 4,
             paddingBottom: () => 4
         },
-        margin: [0, 0, 0, 10]
+        margin: [0, 0, 0, 8]
+    }
+}
+
+export function createAcknowledgementFootnotes() {
+    return {
+        stack: [
+            { text: '* Credit card processing fee payable to Bank', fontSize: 8, color: FOOTNOTE_GRAY },
+            {
+                text: '** Please note that any overpayment amount is non-refundable and will be credited against future school fee invoices.',
+                fontSize: 8,
+                color: FOOTNOTE_GRAY,
+                margin: [0, 1, 0, 0]
+            }
+        ],
+        margin: [0, 0, 0, 8]
     }
 }
 
 export function createCreditCardLine(data: any = {}) {
     const { cardBankName = '' } = data
     return {
-        text: [{ text: 'Credit card: ', bold: true }, { text: valueOrDash(cardBankName) }],
+        text: [{ text: 'Credit card: ', bold: true }, { text: valueOrDash(cardBankName), bold: true }],
         style: 'paymentMethodLine',
         margin: [0, 4, 0, 12]
     }
 }
 
 export function createAcknowledgementSignatures(data: any = {}) {
-    const { cashierName = '' } = data
+    const { cashierName = '', authorisedName = '' } = data
 
-    const boxLayout = {
-        hLineWidth: () => 0.5,
-        vLineWidth: () => 0.5,
-        hLineColor: () => '#ADABAB',
-        vLineColor: () => '#ADABAB'
+    const dottedLine = {
+        canvas: [
+            { type: 'line', x1: 40, y1: 0, x2: 215, y2: 0, lineWidth: 0.5, dash: { length: 2 }, lineColor: '#000000' }
+        ]
     }
 
-    return {
-        columns: [
+    const signatureColumn = (name: string, label: string) => ({
+        width: '*',
+        stack: [
             {
-                width: '*',
-                stack: [
-                    {
-                        table: {
-                            widths: ['*'],
-                            heights: [38],
-                            body: [
-                                [
-                                    {
-                                        text: cashierName || ' ',
-                                        style: 'signatureName',
-                                        alignment: 'center',
-                                        margin: [0, 12, 0, 0],
-                                        ...thaiFont(cashierName)
-                                    }
-                                ]
-                            ]
-                        },
-                        layout: boxLayout,
-                        margin: [40, 0, 40, 6]
-                    },
-                    { text: 'Cashier', style: 'signatureLabel', alignment: 'center' }
-                ]
+                text: name || ' ',
+                style: 'signatureName',
+                alignment: 'center',
+                margin: [0, 36, 0, 4],
+                ...thaiFont(name)
             },
-            {
-                width: '*',
-                stack: [
-                    {
-                        table: {
-                            widths: ['*'],
-                            heights: [38],
-                            body: [[{ text: ' ', style: 'signatureName', alignment: 'center', margin: [0, 8, 0, 8] }]]
-                        },
-                        layout: boxLayout,
-                        margin: [40, 0, 40, 6]
-                    },
-                    { text: 'Authorised signature', style: 'signatureLabel', alignment: 'center' }
-                ]
-            }
-        ],
-        margin: [0, 24, 0, 0]
+            dottedLine,
+            { text: label, style: 'signatureLabel', alignment: 'center', margin: [0, 4, 0, 0] }
+        ]
+    })
+
+    return {
+        columns: [signatureColumn(cashierName, 'Cashier'), signatureColumn(authorisedName, 'Authorised signature')],
+        margin: [0, 12, 0, 0]
     }
 }
