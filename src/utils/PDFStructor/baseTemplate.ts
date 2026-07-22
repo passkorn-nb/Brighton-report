@@ -268,10 +268,6 @@ export function createPaymentMethods(data: any = {}) {
         branch = 'Sathu Pradit (branch code 0041)',
         swiftCode = 'KASITHBK',
         bankAddress = '1 Soi Rat Burana 22/1, Rat Burana Road, Bangkok 10140',
-        billerIdNo = '099-4-00259063-3',
-        referenceNo1 = '',
-        referenceNo2 = '',
-        qrCodeBase64 = '',
         financeEmail = 'finance@kingsbangkok.ac.th',
         bankFeeRate = '1.3%',
         isExternal = false
@@ -328,54 +324,17 @@ export function createPaymentMethods(data: any = {}) {
     })
 
     if (!isExternal) {
-        // 3. Bill Payment
-        const billPaymentText = `Bill Payment via Mobile Banking, Internet Banking, ATM or Bank Counter: Please use the QR code provided below to scan for payment. Kindly note that bank charges will apply to payments made via ATM or at the bank counter.`
+        // 3. PromptPay via Online Payment Link (replaced the former Bill Payment biller/QR block)
         stack.push({
-            text: [{ text: '-  ' }, { text: billPaymentText }],
-            style: 'paymentText',
-            margin: [0, 0, 0, 3]
-        })
-
-        // Bill payment details + QR code
-        const billRows = [
-            ['Biller ID no.', billerIdNo],
-            ['Reference no. (Ref 1)', referenceNo1],
-            ['Reference no. (Ref 2)', referenceNo2]
-        ]
-
-        const billContent: any = {
-            columns: [
+            text: [
+                { text: '-  ' },
                 {
-                    width: '*',
-                    table: {
-                        widths: [120, '*'],
-                        body: billRows.map(([label, value]) => [
-                            { text: label, style: 'bankDetailLabel', border: [false, false, false, false] },
-                            { text: value, style: 'bankDetailValue', border: [false, false, false, false] }
-                        ])
-                    },
-                    layout: 'noBorders',
-                    margin: [80, 0, 0, 0]
+                    text: 'PromptPay via Online Payment Link: An online payment link will be provided on the Parent Portal. Please access the link and scan the PromptPay QR code to complete the payment via your Mobile Banking application.'
                 }
-            ]
-        }
-
-        // Add QR code image (base64)
-        if (qrCodeBase64) {
-            billContent.columns.push({
-                width: 90,
-                stack: [
-                    {
-                        image: qrCodeBase64,
-                        fit: [50, 50],
-                        alignment: 'center'
-                    }
-                ],
-                margin: [-300, -8, 0, 0]
-            })
-        }
-
-        stack.push({ ...billContent, margin: [0, 0, 0, 5] })
+            ],
+            style: 'paymentText',
+            margin: [0, 0, 0, 5]
+        })
 
         // 4. Credit card
         stack.push({
