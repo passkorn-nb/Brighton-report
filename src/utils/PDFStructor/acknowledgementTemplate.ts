@@ -116,14 +116,25 @@ export function createAcknowledgementInfoBox(data: any = {}) {
 }
 
 export function createAcknowledgementItemsTable(rows: any[] = [], options: any = {}) {
-    const { overpaymentAmount = 0, grandTotal = null, amountInWords = '' } = options
+    const { overpaymentAmount = 0, overpaymentFee = 0, grandTotal = null, amountInWords = '' } = options
 
-    const invoiceTotal = rows.reduce((sum: number, row: any) => sum + (Number(row.invoiceAmount) || 0), 0)
-    const cardFeeTotal = rows.reduce((sum: number, row: any) => sum + (Number(row.cardFee) || 0), 0)
+    const round2 = (n: number) => Math.round(n * 100) / 100
+    const hasOverpayment = Number(overpaymentAmount) > 0
+    const overBase = hasOverpayment ? Number(overpaymentAmount) : 0
+    const overFee = hasOverpayment ? Number(overpaymentFee) || 0 : 0
+
+    // Column totals include the overpayment row's own base and fee share — the grand total's
+    // "Invoice amount" column is the full charged base (invoices + overpayment).
+    const invoiceTotal = round2(
+        rows.reduce((sum: number, row: any) => sum + (Number(row.invoiceAmount) || 0), 0) + overBase
+    )
+    const cardFeeTotal = round2(rows.reduce((sum: number, row: any) => sum + (Number(row.cardFee) || 0), 0) + overFee)
     const receivedTotal =
         grandTotal != null
             ? grandTotal
-            : rows.reduce((sum: number, row: any) => sum + (Number(row.received) || 0), 0) + Number(overpaymentAmount || 0)
+            : round2(
+                  rows.reduce((sum: number, row: any) => sum + (Number(row.received) || 0), 0) + overBase + overFee
+              )
 
     const widths = [30, 80, '*', '*', '*']
 
@@ -152,8 +163,8 @@ export function createAcknowledgementItemsTable(rows: any[] = [], options: any =
     ])
 
     // Overpayment row appears only when the batch actually carries an overpayment — the official
-    // form has no such row in the normal (exact-amount) case.
-    const hasOverpayment = Number(overpaymentAmount) > 0
+    // form has no such row in the normal (exact-amount) case. It shows its own base amount, its own
+    // card-fee share, and a fee-inclusive received amount, exactly like an invoice row.
     const overpaymentRow: any[] = [
         {
             text: 'Overpayment amount**',
@@ -162,9 +173,14 @@ export function createAcknowledgementItemsTable(rows: any[] = [], options: any =
             colSpan: 2
         },
         {},
-        { text: formatCurrency(0), alignment: 'right', style: 'tableCell', bold: true },
-        { text: formatCurrency(0), alignment: 'right', style: 'tableCell', bold: true },
-        { text: formatCurrency(overpaymentAmount), alignment: 'right', style: 'tableCell', bold: true }
+        { text: formatCurrency(overBase), alignment: 'right', style: 'tableCell', bold: true },
+        { text: formatCurrency(overFee), alignment: 'right', style: 'tableCell', bold: true },
+        {
+            text: formatCurrency(round2(overBase + overFee)),
+            alignment: 'right',
+            style: 'tableCell',
+            bold: true
+        }
     ]
 
     // GRAND TOTAL spans two rows: column totals on top, amount-in-words underneath.

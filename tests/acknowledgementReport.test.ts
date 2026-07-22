@@ -14,6 +14,7 @@ const sample = {
         { no: 2, invoiceNo: 'INV-2025-02762', invoiceAmount: 7500, cardFee: 97.5, received: 7500 }
     ],
     overpaymentAmount: 500,
+    overpaymentFee: 6.5,
     grandTotal: 86000,
     amountInWords: 'EIGHTY-SIX THOUSAND BAHT',
     cardBankName: 'KBank EDC',
@@ -78,6 +79,12 @@ describe('buildAcknowledgementReport', () => {
     it('shows the overpayment row and its ** footnote when overpaymentAmount > 0', () => {
         expect(all).toContain('Overpayment amount**')
         expect(all).toContain('** Please note that any overpayment amount is non-refundable')
+    })
+
+    it('the overpayment row carries its own base, fee share and fee-inclusive received amount', () => {
+        expect(all).toContain('500.00') // base
+        expect(all).toContain('6.50') // fee share
+        expect(all).toContain('506.50') // received = base + fee
     })
 })
 

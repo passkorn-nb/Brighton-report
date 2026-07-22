@@ -14,6 +14,7 @@ function buildAcknowledgementCopyContent(data: any, copyLabel: string): any[] {
     const infoBox = createAcknowledgementInfoBox(data)
     const itemsTable = createAcknowledgementItemsTable(data.rows || [], {
         overpaymentAmount: data.overpaymentAmount ?? 0,
+        overpaymentFee: data.overpaymentFee ?? 0,
         grandTotal: data.grandTotal,
         amountInWords: data.amountInWords
     })
