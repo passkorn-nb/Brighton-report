@@ -247,14 +247,17 @@ export function createCreditCardLine(data: any = {}) {
 }
 
 export function createAcknowledgementSignatures(data: any = {}) {
-    const { cashierName = '', authorisedName = '' } = data
+    const {
+        cashierName = '',
+        authorisedName = '',
+        addressLine = "King's College International School Bangkok, 727 Ratchadaphisek Road, Bangkok 10120 Thailand",
+        contactLine = '+66 (0) 2481 9955, finance@kingsbangkok.ac.th, www.kingsbangkok.ac.th'
+    } = data
 
-    const dottedLine = {
-        canvas: [
-            { type: 'line', x1: 40, y1: 0, x2: 215, y2: 0, lineWidth: 0.5, dash: { length: 2 }, lineColor: '#000000' }
-        ]
-    }
-
+    // Dotted separator between the signed name and the role label, rendered as text (a row of dots)
+    // rather than a canvas line: canvas vector elements do NOT render inside a columns>stack in this
+    // pdfmake build. A FRESH node is built per column on purpose — pdfmake mis-positions a shared
+    // node object reused across columns, so each column gets its own instance.
     const signatureColumn = (name: string, label: string) => ({
         width: '*',
         stack: [
@@ -262,16 +265,21 @@ export function createAcknowledgementSignatures(data: any = {}) {
                 text: name || ' ',
                 style: 'signatureName',
                 alignment: 'center',
-                margin: [0, 36, 0, 4],
+                margin: [0, 36, 0, 2],
                 ...thaiFont(name)
             },
-            dottedLine,
-            { text: label, style: 'signatureLabel', alignment: 'center', margin: [0, 4, 0, 0] }
+            { text: '.'.repeat(34), color: '#555555', alignment: 'center', noWrap: true, margin: [0, 0, 0, 2] },
+            { text: label, style: 'signatureLabel', alignment: 'center', margin: [0, 2, 0, 0] }
         ]
     })
 
     return {
-        columns: [signatureColumn(cashierName, 'Cashier'), signatureColumn(authorisedName, 'Authorised signature')],
+        stack: [
+            { columns: [signatureColumn(cashierName, 'Cashier'), signatureColumn(authorisedName, 'Authorised signature')] },
+            // Address sits directly beneath the signatures (not pinned to the page footer).
+            { text: addressLine, style: 'footerText', alignment: 'center', margin: [0, 28, 0, 0] },
+            { text: contactLine, style: 'footerText', alignment: 'center', margin: [0, 1, 0, 0] }
+        ],
         margin: [0, 12, 0, 0]
     }
 }

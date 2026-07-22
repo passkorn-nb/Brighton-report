@@ -1,5 +1,5 @@
 import { DEFAULT_FONT } from './baseTemplate'
-import { createReceiptFooter, getReceiptStyles } from './receiptTemplate'
+import { getReceiptStyles } from './receiptTemplate'
 import {
     createAcknowledgementHeader,
     createAcknowledgementInfoBox,
@@ -37,10 +37,9 @@ export function buildAcknowledgementReport(data: any = {}) {
 
     return {
         pageSize: 'A4' as const,
-        pageMargins: [40, 40, 40, 70] as [number, number, number, number],
+        pageMargins: [40, 40, 40, 40] as [number, number, number, number],
         content: [...copy1, ...copy2],
         styles: getReceiptStyles(),
-        defaultStyle: { font: DEFAULT_FONT },
-        footer: createReceiptFooter()
+        defaultStyle: { font: DEFAULT_FONT }
     }
 }
