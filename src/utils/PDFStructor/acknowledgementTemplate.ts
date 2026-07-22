@@ -151,7 +151,9 @@ export function createAcknowledgementItemsTable(rows: any[] = [], options: any =
         { text: formatCurrency(row.received), alignment: 'right', style: 'tableCell' }
     ])
 
-    // Overpayment row is always shown (matches the official form, even when 0.00).
+    // Overpayment row appears only when the batch actually carries an overpayment — the official
+    // form has no such row in the normal (exact-amount) case.
+    const hasOverpayment = Number(overpaymentAmount) > 0
     const overpaymentRow: any[] = [
         {
             text: 'Overpayment amount**',
@@ -193,7 +195,9 @@ export function createAcknowledgementItemsTable(rows: any[] = [], options: any =
         {}
     ]
 
-    const body = [headerRow, ...bodyRows, overpaymentRow, grandTotalAmountsRow, grandTotalWordsRow]
+    const body = hasOverpayment
+        ? [headerRow, ...bodyRows, overpaymentRow, grandTotalAmountsRow, grandTotalWordsRow]
+        : [headerRow, ...bodyRows, grandTotalAmountsRow, grandTotalWordsRow]
 
     return {
         table: {
@@ -215,17 +219,20 @@ export function createAcknowledgementItemsTable(rows: any[] = [], options: any =
     }
 }
 
-export function createAcknowledgementFootnotes() {
+export function createAcknowledgementFootnotes(options: any = {}) {
+    const { showOverpaymentNote = false } = options
+    const stack: any[] = [{ text: '* Credit card processing fee payable to Bank', fontSize: 8, color: FOOTNOTE_GRAY }]
+    // The ** note only makes sense when the overpayment row is on the document.
+    if (showOverpaymentNote) {
+        stack.push({
+            text: '** Please note that any overpayment amount is non-refundable and will be credited against future school fee invoices.',
+            fontSize: 8,
+            color: FOOTNOTE_GRAY,
+            margin: [0, 1, 0, 0]
+        })
+    }
     return {
-        stack: [
-            { text: '* Credit card processing fee payable to Bank', fontSize: 8, color: FOOTNOTE_GRAY },
-            {
-                text: '** Please note that any overpayment amount is non-refundable and will be credited against future school fee invoices.',
-                fontSize: 8,
-                color: FOOTNOTE_GRAY,
-                margin: [0, 1, 0, 0]
-            }
-        ],
+        stack,
         margin: [0, 0, 0, 8]
     }
 }

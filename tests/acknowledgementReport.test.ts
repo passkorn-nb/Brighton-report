@@ -74,4 +74,21 @@ describe('buildAcknowledgementReport', () => {
         expect(all).toContain('2025/2026')
         expect(all).toContain('13/07/2026')
     })
+
+    it('shows the overpayment row and its ** footnote when overpaymentAmount > 0', () => {
+        expect(all).toContain('Overpayment amount**')
+        expect(all).toContain('** Please note that any overpayment amount is non-refundable')
+    })
+})
+
+describe('buildAcknowledgementReport without overpayment', () => {
+    const def = buildAcknowledgementReport({ ...sample, overpaymentAmount: 0 })
+    const all = texts(def).join(' \n ')
+
+    it('hides the overpayment row and its ** footnote (matches the approved form)', () => {
+        expect(all).not.toContain('Overpayment amount**')
+        expect(all).not.toContain('** Please note')
+        // the * card-fee footnote must remain
+        expect(all).toContain('* Credit card processing fee payable to Bank')
+    })
 })

@@ -17,7 +17,7 @@ function buildAcknowledgementCopyContent(data: any, copyLabel: string): any[] {
         grandTotal: data.grandTotal,
         amountInWords: data.amountInWords
     })
-    const footnotes = createAcknowledgementFootnotes()
+    const footnotes = createAcknowledgementFootnotes({ showOverpaymentNote: Number(data.overpaymentAmount ?? 0) > 0 })
     const creditCardLine = createCreditCardLine({ cardBankName: data.cardBankName })
     const signatures = createAcknowledgementSignatures({
         cashierName: data.cashierName,
