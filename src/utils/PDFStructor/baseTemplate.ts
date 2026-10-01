@@ -13,62 +13,44 @@ export function thaiFont(text: unknown): { font?: string } {
     return text != null && THAI_RE.test(String(text)) ? { font: 'Sarabun' } : {}
 }
 
-const LOGO_PATH = path.resolve(process.cwd(), 'src/assets/images/kcis-logo.png')
-let cachedLogo: string | null | undefined
+// Invoices are set in a serif face to match the school's reference form. Receipts stay on
+// DEFAULT_FONT — see receiptTemplate, which imports DEFAULT_FONT rather than this.
+export const INVOICE_FONT = 'Times'
 
-function loadLogoBase64(): string | null {
-    if (cachedLogo !== undefined) return cachedLogo
-    try {
-        if (fs.existsSync(LOGO_PATH)) {
-            const buf = fs.readFileSync(LOGO_PATH)
-            cachedLogo = `data:image/png;base64,${buf.toString('base64')}`
-        } else {
-            cachedLogo = null
-        }
-    } catch {
-        cachedLogo = null
-    }
-    return cachedLogo
-}
-
-const SIGNATURE_PATH = path.resolve(process.cwd(), 'src/assets/images/signature.png')
-let cachedSignature: string | null | undefined
-
-function loadSignatureBase64(): string | null {
-    if (cachedSignature !== undefined) return cachedSignature
-    try {
-        if (fs.existsSync(SIGNATURE_PATH)) {
-            const buf = fs.readFileSync(SIGNATURE_PATH)
-            cachedSignature = `data:image/png;base64,${buf.toString('base64')}`
-        } else {
-            logger.warn(`Signature file not found at ${SIGNATURE_PATH}, falling back to blank`)
-            cachedSignature = null
-        }
-    } catch {
-        cachedSignature = null
-    }
-    return cachedSignature
-}
 
 /**
  * Shared base template elements for all KCIS invoice report types.
- * Matches the official King's College International School Bangkok invoice format.
+ * Matches the official Brighton College Bangkok, Vibhavadi invoice format.
  * Uses pdfmake document definition format.
  */
 
 // ---------------------------------------------------------------------------
-// Header – centered logo (school name baked into logo) + big "INVOICE" title
+// Header – school name / "Managed by" operator / address / contact line, then the
+// "INVOICE" title. No crest: the reference form is all type.
 // ---------------------------------------------------------------------------
 export function createHeader(data: any = {}) {
-    const { logoBase64 } = data
+    const { nameEn = '', managedBy = '', addressEn = '', phone = '', email = '' } = data
 
-    const logo = logoBase64 || loadLogoBase64()
     const stack: any[] = []
 
-    if (logo) {
-        stack.push({ image: logo, fit: [150, 150], alignment: 'center', margin: [0, 0, 0, 4] })
+    // The name / operator / address lines each stand on their own, so they get generous leading.
+    // Address and contact line are a pair and stay tighter to each other than to their neighbours.
+    if (nameEn) {
+        stack.push({ text: nameEn, style: 'schoolName', alignment: 'center', margin: [0, 0, 0, 13] })
     }
-    stack.push({ text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, 0, 0, 6] })
+    if (managedBy) {
+        stack.push({ text: 'Managed by', style: 'managedByLabel', alignment: 'center', margin: [0, 0, 0, 13] })
+        stack.push({ text: managedBy, style: 'schoolLocation', alignment: 'center', margin: [0, 0, 0, 13] })
+    }
+    if (addressEn) {
+        stack.push({ text: addressEn, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 5] })
+    }
+    const contactLine = [phone, email].filter(Boolean).join('  Email : ')
+    if (contactLine) {
+        stack.push({ text: contactLine, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 18] })
+    }
+
+    stack.push({ text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, 0, 0, 16] })
 
     return { stack }
 }
@@ -76,78 +58,118 @@ export function createHeader(data: any = {}) {
 // ---------------------------------------------------------------------------
 // Student / Invoice information – two-column key-value layout
 // ---------------------------------------------------------------------------
+// Bordered box: a single-cell table, used to draw the same rectangle look pdfmake tables give us
+// (pdfmake has no free-floating <div>-with-border primitive).
+// Outer border only — the reference form's info boxes have no internal rules between the
+// label and its value, so the vertical line is drawn at the box edges alone.
+const BOX_LAYOUT = {
+    hLineWidth: (i: number, node: any) => (i === 0 || i === node.table.body.length ? 1 : 0),
+    vLineWidth: (i: number, node: any) => (i === 0 || i === node.table.widths.length ? 1 : 0),
+    hLineColor: () => '#000000',
+    vLineColor: () => '#000000',
+    paddingLeft: () => 8,
+    paddingRight: () => 8,
+    paddingTop: () => 6,
+    paddingBottom: () => 6
+}
+
+// Labels are bold and share a column; the fixed right margin is what lines the values up
+// with each other, since there is no rule to align against.
+function labelValueBox(rows: Array<[string, string, boolean?]>) {
+    return {
+        table: {
+            widths: ['auto', '*'],
+            body: rows.map(([label, value, bold]) => [
+                { text: label, style: 'infoLabel', bold: true, margin: [0, 0, 18, 0] },
+                { text: value, style: 'infoValue', bold: !!bold, ...thaiFont(value) }
+            ])
+        },
+        layout: BOX_LAYOUT
+    }
+}
+
+// Student box and due-date box run to 70% of the content width; the No/Date and PIN boxes
+// take the remainder. Proportions taken from the reference form.
+const INFO_LEFT_WIDTH = '70%'
+const INFO_GAP_WIDTH = '4%'
+
 export function createStudentInfo(data: any = {}) {
     const {
         studentId = '',
+        pin = '',
         studentName = '',
         yearGroup = '',
         contactName = '',
         address = '',
         invoiceNo = '',
-        invoiceDate = dayjs().format('DD MMMM YYYY'),
+        invoiceDate = dayjs().format('DD-MM-YYYY'),
         dueDate = '',
-        schoolYear = '',
         isExternal = false
     } = data
 
-    const leftRows = isExternal
-        ? [
-              ['Client ID', studentId],
-              ['Client Name', studentName],
-              ['Contact name', contactName],
-              ['Address', address]
-          ]
-        : [
-              ['Student ID no.', studentId],
-              ['Student name', studentName],
-              ['Year group', formatYearGroupLabel(yearGroup)],
-              ['Contact name', contactName],
-              ['Address', address]
-          ]
+    const nameLabel = isExternal ? 'Client name' : 'Student name'
+    const leftStack: any[] = [
+        { text: [{ text: `${nameLabel} : `, bold: true }, { text: studentName, ...thaiFont(studentName) }], style: 'infoValue', margin: [0, 0, 0, 10] }
+    ]
+    if (isExternal && contactName) {
+        leftStack.push({
+            text: [{ text: 'Contact name : ', bold: true }, { text: contactName, ...thaiFont(contactName) }],
+            style: 'infoValue',
+            margin: [0, 0, 0, 4]
+        })
+    }
+    leftStack.push({
+        text: [{ text: 'Address : ', bold: true }, { text: address, ...thaiFont(address) }],
+        style: 'infoValue'
+    })
+    // The reference form leaves room under the address for a second wrapped line, so the box
+    // keeps its height whether the address is one line or two.
+    leftStack.push({ text: '', margin: [0, 0, 0, 12] })
 
-    const rightRows = isExternal
-        ? [
-              ['Invoice no.', invoiceNo],
-              ['Invoice date', invoiceDate],
-              ['Due date', dueDate]
-          ]
-        : [
-              ['Invoice no.', invoiceNo],
-              ['Invoice date', invoiceDate],
-              ['Due date', dueDate],
-              ['School year', schoolYear]
-          ]
+    const leftBox = {
+        table: { widths: ['*'], body: [[{ stack: leftStack }]] },
+        layout: BOX_LAYOUT
+    }
 
-    // Build a table with 4 columns: label, value, label, value
-    const maxRows = Math.max(leftRows.length, rightRows.length)
-    const body: any[] = []
-    for (let i = 0; i < maxRows; i++) {
-        const left = leftRows[i] || ['', '']
-        const right = rightRows[i] || ['', '']
-        body.push([
-            { text: left[0], style: 'infoLabel' },
-            { text: left[1], style: 'infoValue', ...thaiFont(left[1]) },
-            { text: right[0], style: 'infoLabel' },
-            { text: right[1], style: 'infoValue', ...thaiFont(right[1]) }
-        ])
+    const invoiceBox = labelValueBox([
+        ['No', invoiceNo],
+        ['Date', invoiceDate]
+    ])
+
+    const rightStackItems: any[] = [invoiceBox]
+
+    // PIN/Classroom moves to the right column of the due-date row (Row 2), so it is NOT
+    // stacked here in Row 1.
+
+    // Same width as the student box above it, matching the reference form — not a full-page banner.
+    const pinBox = !isExternal
+        ? labelValueBox([
+              ['PIN', pin || studentId],
+              ['Classroom', formatYearGroupLabel(yearGroup).toUpperCase()]
+          ])
+        : null
+
+    const dueDateBox = {
+        columns: [
+            { width: INFO_LEFT_WIDTH, ...labelValueBox([['PLEASE PAY ON OR BEFORE', dueDate, true]]) },
+            { width: INFO_GAP_WIDTH, text: '' },
+            { width: '*', ...(pinBox ?? { text: '' }) }
+        ],
+        margin: [0, 8, 0, 0]
     }
 
     return {
-        table: {
-            widths: [80, '*', 75, 'auto'],
-            body
-        },
-        layout: {
-            hLineWidth: (i: number, node: any) => (i === 0 || i === node.table.body.length ? 0.5 : 0),
-            vLineWidth: (i: number, node: any) => (i === 0 || i === node.table.widths.length ? 0.5 : 0),
-            hLineColor: () => '#ADABAB',
-            vLineColor: () => '#ADABAB',
-            paddingLeft: () => 6,
-            paddingRight: () => 6,
-            paddingTop: () => 5,
-            paddingBottom: () => 5
-        },
-        margin: [0, 0, 0, 4]
+        stack: [
+            {
+                columns: [
+                    { width: INFO_LEFT_WIDTH, stack: [leftBox] },
+                    { width: INFO_GAP_WIDTH, text: '' },
+                    { width: '*', stack: rightStackItems }
+                ]
+            },
+            dueDateBox
+        ],
+        margin: [0, 0, 0, 10]
     }
 }
 
@@ -155,17 +177,21 @@ export function createStudentInfo(data: any = {}) {
 // Fee table – No. | Description | Amount (THB) with total row at bottom
 // ---------------------------------------------------------------------------
 export function createFeeTable(items: any[] = [], options: any = {}) {
-    const { amountInWords = '', totalAmount = null, minRows = 5 } = options
+    // Floor, not a cap: the reference form keeps the table at a fixed height on a short
+    // invoice, and it simply grows past this once there are more line items.
+    const { amountInWords = '', totalAmount = null, minRows = 10, period = '' } = options
 
     const total =
         totalAmount != null ? totalAmount : items.reduce((sum: number, item: any) => sum + (item.amount || 0), 0)
 
+    const showPeriod = !!period
     const headerRow: any[] = [
-        { text: 'No.', style: 'tableHeader', alignment: 'center' },
-        { text: 'Description', style: 'tableHeader' },
-        { text: 'Amount\n(THB)', style: 'tableHeader', alignment: 'right' }
+        { text: 'NO.', style: 'tableHeader', alignment: 'center' },
+        { text: 'DESCRIPTION', style: 'tableHeader', alignment: 'center' },
+        ...(showPeriod ? [{ text: 'PERIOD', style: 'tableHeader', alignment: 'center' }] : []),
+        { text: 'AMOUNT', style: 'tableHeader', alignment: 'center' }
     ]
-    const widths: any[] = [30, '*', 90]
+    const widths: any[] = showPeriod ? [30, '*', 90, 90] : [30, '*', 90]
 
     const bodyRows: any[] = items.map((item: any, index: number) => {
         const cellStack: any[] = []
@@ -177,31 +203,37 @@ export function createFeeTable(items: any[] = [], options: any = {}) {
                 margin: [0, 1, 0, 0],
                 ...thaiFont(item.description)
             })
+        if (item.tripActivity) {
+            const dateRange = item.tripStartDate
+                ? item.tripEndDate && !dayjs(item.tripEndDate).isSame(item.tripStartDate, 'day')
+                    ? `${dayjs(item.tripStartDate).format('DD MMM YYYY')} – ${dayjs(item.tripEndDate).format('DD MMM YYYY')}`
+                    : dayjs(item.tripStartDate).format('DD MMM YYYY')
+                : ''
+            const tripText = dateRange ? `${item.tripActivity} — ${dateRange}` : item.tripActivity
+            cellStack.push({
+                text: tripText,
+                style: 'tableCellSubtext',
+                margin: [0, 1, 0, 0],
+                ...thaiFont(tripText)
+            })
+        }
         return [
             { text: String(index + 1), alignment: 'center', style: 'tableCell' },
             cellStack.length === 0 ? { text: '', style: 'tableCell' } : { stack: cellStack },
+            ...(showPeriod ? [{ text: period, alignment: 'center', style: 'tableCell' }] : []),
             { text: formatCurrency(item.amount), alignment: 'right', style: 'tableCell' }
         ]
     })
 
     const emptyCount = Math.max(0, minRows - items.length)
     for (let i = 0; i < emptyCount; i++) {
-        bodyRows.push([
-            { text: '', style: 'tableCell' },
-            { text: '', style: 'tableCell' },
-            { text: '', style: 'tableCell' }
-        ])
+        bodyRows.push(widths.map(() => ({ text: '', style: 'tableCell' })))
     }
 
+    const totalLabelColSpan = widths.length - 1
     const totalRow: any[] = [
-        {
-            columns: [
-                { text: String(amountInWords || '').toUpperCase() , style: 'totalWordsCell', width: '*' },
-                { text: 'TOTAL', style: 'totalLabel', width: 'auto' }
-            ],
-            colSpan: 2
-        },
-        {},
+        { text: 'GRAND TOTAL', style: 'totalLabel', colSpan: totalLabelColSpan, alignment: 'right' },
+        ...Array(totalLabelColSpan - 1).fill({}),
         {
             text: formatCurrency(total),
             style: 'totalValue',
@@ -209,60 +241,175 @@ export function createFeeTable(items: any[] = [], options: any = {}) {
         }
     ]
 
-    return {
+    const table = {
         table: {
             headerRows: 1,
             widths,
             body: [headerRow, ...bodyRows, totalRow]
         },
         layout: {
+            // Horizontal rules only where the reference form has them: around the header,
+            // and above/below the GRAND TOTAL row. The filler rows stay open.
             hLineWidth: (i: number, node: any) => {
                 const rows = node.table.body.length
-                return i === 0 || i === 1 || i === rows - 1 || i === rows ? 0.5 : 0
+                return i === 0 || i === 1 || i === rows - 1 || i === rows ? 1 : 0
             },
-            vLineWidth: (i: number, node: any) => {
-                const cols = node.table.widths.length
-                return i === 0 || i === cols - 1 || i === cols ? 0.5 : 0
-            },
-            hLineColor: () => '#ADABAB',
-            vLineColor: () => '#ADABAB',
-            paddingLeft: () => 6,
-            paddingRight: () => 6,
-            paddingTop: () => 4,
-            paddingBottom: () => 4
+            // Every column rule runs the full height of the table, filler rows included.
+            vLineWidth: () => 1,
+            hLineColor: () => '#000000',
+            vLineColor: () => '#000000',
+            paddingLeft: () => 8,
+            paddingRight: () => 8,
+            paddingTop: () => 6,
+            paddingBottom: () => 6
         },
         margin: [0, 0, 0, 0]
     }
+
+    // "Amount in words" is its own boxed line below the table (not inlined into the total row).
+    const amountInWordsBox = {
+        table: {
+            widths: ['*'],
+            body: [
+                [
+                    {
+                        text: [
+                            { text: 'Amount in words  ', bold: true },
+                            { text: amountInWords ? `(${amountInWords})` : '' }
+                        ],
+                        style: 'totalWordsCell'
+                    }
+                ]
+            ]
+        },
+        layout: BOX_LAYOUT,
+        margin: [0, 6, 0, 0]
+    }
+
+    return { stack: [table, amountInWordsBox] }
 }
 
 // ---------------------------------------------------------------------------
 // Late payment note
 // ---------------------------------------------------------------------------
+// The reference form runs "REMARKS" inline with the first numbered remark, and boxes the
+// annual figure inside the second one. This column width keeps remark 2 aligned under remark 1.
+const REMARKS_LABEL_WIDTH = 48
+
+// Tight border box for the inline annual total — BOX_LAYOUT's padding is sized for the
+// info boxes and would swamp a figure sitting mid-sentence.
+const INLINE_BOX_LAYOUT = {
+    hLineWidth: () => 0.5,
+    vLineWidth: () => 0.5,
+    hLineColor: () => '#000000',
+    vLineColor: () => '#000000',
+    paddingLeft: () => 4,
+    paddingRight: () => 4,
+    paddingTop: () => 1,
+    paddingBottom: () => 1
+}
+
 export function createLatePaymentNote(data: any = {}) {
-    const { lateChargeRate = '1.5%', schoolNameFull = "King's College International School Bangkok" } = data
+    const { lateChargeRate = '1.25%', annualTotal = null } = data
+
+    const rows: any[] = [
+        {
+            columns: [
+                { width: REMARKS_LABEL_WIDTH, text: 'REMARKS', style: 'noteTitle' },
+                {
+                    width: '*',
+                    text: `1. Late payment charges of ${lateChargeRate} per month will begin from the first day after due date until payment date.`,
+                    style: 'noteText'
+                }
+            ]
+        }
+    ]
+
+    if (annualTotal != null) {
+        rows.push({
+            columns: [
+                { width: REMARKS_LABEL_WIDTH, text: '' },
+                {
+                    width: 'auto',
+                    text: '2. If you wish to pay for the annual school fees total charges will be BHT',
+                    style: 'noteText',
+                    margin: [0, 2, 4, 0]
+                },
+                {
+                    width: 'auto',
+                    table: {
+                        widths: ['auto'],
+                        body: [[{ text: formatCurrency(annualTotal), style: 'noteText', bold: true }]]
+                    },
+                    layout: INLINE_BOX_LAYOUT
+                },
+                { width: '*', text: '* See Appendix', style: 'noteText', margin: [4, 2, 0, 0] }
+            ],
+            margin: [0, 2, 0, 0]
+        })
+    }
 
     return {
-        stack: [
-            {
-                text: `Late payment charges of ${lateChargeRate} per month or part thereof will be applied to payments made after the invoice due date.`,
-                style: 'noteText'
-            },
-            {
-                text: `The condition for refund of the security deposit is subject to the terms and conditions of ${schoolNameFull}.`,
-                style: 'noteText',
-                margin: [0, 2, 0, 0]
-            }
-        ],
-        margin: [0, 2, 0, 4]
+        stack: rows,
+        margin: [0, 6, 0, 6]
     }
 }
 
 // ---------------------------------------------------------------------------
 // Payment methods section
 // ---------------------------------------------------------------------------
+// Condensed variant matching the reference tuition-invoice layout: just "Payment via Bank Transfer
+// or Credit Card" plus a bank-details box, sourced from School Info settings — no cheque/QR/bill-pay
+// blocks (those stay on the elaborate default variant used by other invoice categories).
+export function createSimplePaymentMethods(data: any = {}) {
+    const {
+        accountName = 'Brighton College Bangkok, Vibhavadi',
+        accountNumber = '',
+        bankName = '',
+        bankAddress = '',
+        swiftCode = ''
+    } = data
+
+    const bankDetails = [
+        ['Bank Name', bankName],
+        ['Bank Account Name', accountName],
+        ['Account No', accountNumber],
+        ...(bankAddress || swiftCode
+            ? [['Bank Address', [bankAddress, swiftCode ? `  Swift Code : ${swiftCode}` : ''].join('')]]
+            : [])
+    ].filter(([, value]) => !!value)
+
+    // Nothing configured yet — drop the whole block. pdfmake reads body[0] to size a table and
+    // throws on an empty one, so an unconfigured School Info would otherwise fail the PDF.
+    if (bankDetails.length === 0) return null
+
+    return {
+        stack: [
+            { text: 'Payment via Bank Transfer or Credit Card', style: 'paymentTitle', margin: [0, 0, 0, 5] },
+            {
+                table: {
+                    widths: [110, '*'],
+                    body: bankDetails.map(([label, value]) => [
+                        { text: label, style: 'bankDetailLabel', border: [false, false, false, false] },
+                        { text: value, style: 'bankDetailValue', border: [false, false, false, false], ...thaiFont(value) }
+                    ])
+                },
+                layout: {
+                    ...{ hLineWidth: () => 0, vLineWidth: () => 0 },
+                    paddingLeft: () => 0,
+                    paddingRight: () => 0,
+                    paddingTop: () => 2,
+                    paddingBottom: () => 2
+                }
+            }
+        ],
+        margin: [0, 0, 0, 4]
+    }
+}
+
 export function createPaymentMethods(data: any = {}) {
     const {
-        accountName = "King's College International School Bangkok",
+        accountName = 'Brighton College Bangkok, Vibhavadi',
         accountNumber = '041-1-12977-2',
         bankName = 'Kasikorn Bank (bank code 004)',
         branch = 'Sathu Pradit (branch code 0041)',
@@ -272,7 +419,7 @@ export function createPaymentMethods(data: any = {}) {
         referenceNo1 = '',
         referenceNo2 = '',
         qrCodeBase64 = '',
-        financeEmail = 'finance@kingsbangkok.ac.th',
+        financeEmail = 'admission@brightoncollegevibha.ac.th',
         bankFeeRate = '1.3%',
         isExternal = false
     } = data
@@ -406,59 +553,215 @@ export function createPaymentMethods(data: any = {}) {
 }
 
 // ---------------------------------------------------------------------------
-// Signature section – "Prepared by" (left) and "Authorised officer" (right)
+// Signature section – "Prepared by" (Accounting Officer) and "Verified by" (Finance & Accounting
+// Manager), both globally configurable (System.signatureSettings — see GeneralController) rather
+// than one hardcoded name + a text-only left column.
 // ---------------------------------------------------------------------------
-export function createSignatureSection(data: any = {}) {
-    const { preparedBy = '', authorisedTitle = '', showSignature = true } = data
-    const signatureImg = showSignature ? loadSignatureBase64() : null
+function signatureColumn(signatory: any, fallbackLabel: string, defaultTitle: string) {
+    // Back-compat: older callers may still pass a plain string for `preparedBy`.
+    const { name = '', title = '', signatureBase64 = null } =
+        typeof signatory === 'string' ? { name: signatory, title: '', signatureBase64: null } : signatory || {}
 
-    const authorisedNode: any = signatureImg
-        ? { image: signatureImg, fit: [70, 30], alignment: 'center', margin: [0, 0, 0, 5] }
-        : { text: '', style: 'signatureName', alignment: 'center', margin: [0, 20, 0, 5] }
+    const roleTitle = title || defaultTitle
+
+    // The signature image sits just above the label: the negative bottom margin pulls the label
+    // row back up so the two overlap slightly instead of stacking with a gap.
+    const imageNode: any = signatureBase64
+        ? { image: signatureBase64, fit: [80, 28], alignment: 'center', margin: [0, 0, 0, -16] }
+        : { text: '', margin: [0, 0, 0, 12] }
+
+    return {
+        width: '*',
+        stack: [
+            imageNode,
+            // Label and name on one line (no dotted signature rule): "Prepared by" on the left, the name
+            // centred in the rest of the column.
+            {
+                columnGap: 8,
+                columns: [
+                    { width: 'auto', text: fallbackLabel, style: 'signatureLabel' },
+                    { width: '*', text: name, style: 'signatureName', alignment: 'center', ...thaiFont(name) }
+                ]
+            },
+            // An empty title prints no position line ("Prepared by" shows the creator's name only).
+            ...(roleTitle ? [{ text: roleTitle, style: 'signatureTitle', alignment: 'center', margin: [0, 3, 0, 0] }] : [])
+        ]
+        // No alignment here: it is inherited. The label stays left-aligned; the name, title and any
+        // signature image set their own centring.
+    }
+}
+
+export function createSignatureSection(data: any = {}) {
+    const { preparedBy = {}, verifiedBy = {} } = data
 
     return {
         columns: [
+            // No default position under either signatory: both print the full name only.
+            signatureColumn(preparedBy, 'Prepared by', ''),
+            signatureColumn(verifiedBy, 'Verified by', '')
+        ],
+        columnGap: 24,
+        margin: [0, 16, 0, 0]
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Appendix page — Instalment (per-term, as invoiced) vs Annual breakdown.
+// The annual figures are a practical approximation computed on the backend (term × terms-in-year,
+// discounts re-run against that base) — see InvoiceReportMapper.buildAppendixData for the source.
+// ---------------------------------------------------------------------------
+const APPENDIX_AMOUNT_COL = 78
+const APPENDIX_TOTAL_INDENT = 96
+
+// An amount with a rule under it, the way a hand-kept ledger marks a figure that is about to be
+// subtotalled. The rule is the bottom edge of a nested full-width table rather than a canvas line:
+// a canvas needs its length hard-coded, which cannot track the column's real inner width, and the
+// rule then stops short of the right-aligned figure. `widths: ['*']` measures itself.
+// The double rule for a total is a second, near-zero-height row underneath.
+function ruledAmount(value: number, opts: { bold?: boolean; double?: boolean } = {}) {
+    const body: any[] = [
+        [{ text: formatCurrency(value), alignment: 'right', style: 'tableCell', bold: !!opts.bold }]
+    ]
+    if (opts.double) body.push([{ text: '', fontSize: 2 }])
+
+    return {
+        table: { widths: ['*'], body },
+        layout: {
+            hLineWidth: (i: number) => (i === 0 ? 0 : 0.7),
+            vLineWidth: () => 0,
+            hLineColor: () => '#000000',
+            paddingLeft: () => 0,
+            paddingRight: () => 0,
+            paddingTop: () => 0,
+            paddingBottom: () => 1
+        }
+    }
+}
+
+// Stair-step ledger, as on the reference Appendix: the opening fee sits in the first amount
+// column, every "Deduct" row puts its (negative) figure in the current column and the resulting
+// balance one column to the right, and any remaining fees land in the final column alongside the
+// total. The number of amount columns therefore follows the number of deductions.
+function appendixBreakdownTable(section: { items?: any[]; discountRows?: any[]; total?: number } = {}) {
+    const { items = [], discountRows = [], total = 0 } = section
+
+    // Opening fee, then the deductions that bite into it, then any further fees — the order the
+    // reference form reads in, which is not the order the payload stores them in.
+    const [openingItem, ...remainingItems] = items
+    const rows = [...(openingItem ? [openingItem] : []), ...discountRows, ...remainingItems]
+
+    const amountCols = discountRows.length + 1
+    const blank = () => ({ text: '', style: 'tableCell' })
+
+    let col = 0
+    let running = 0
+    const body = rows.map((row: any) => {
+        const isDeduction = row.amount < 0
+        const cells: any[] = Array.from({ length: amountCols }, blank)
+
+        if (isDeduction) {
+            running += row.amount
+            cells[col] = ruledAmount(row.amount)
+            col += 1
+            cells[col] = { text: formatCurrency(running), alignment: 'right', style: 'tableCell' }
+        } else {
+            running += row.amount
+            // A fee added after the deductions belongs in the final column, beside the total.
+            cells[col] = { text: formatCurrency(row.amount), alignment: 'right', style: 'tableCell' }
+        }
+
+        return [
             {
-                width: '*',
-                stack: [
-                    {
-                        text: preparedBy || '',
-                        style: 'signatureName',
-                        alignment: 'center',
-                        margin: [0, 20, 0, 5],
-                        ...thaiFont(preparedBy)
-                    },
-                    {
-                        canvas: [{ type: 'line', x1: 20, y1: 0, x2: 200, y2: 0, lineWidth: 1, lineColor: '#000000' }]
-                    },
-                    { text: 'Prepared by', style: 'signatureLabel', alignment: 'center', margin: [0, 5, 0, 0] }
-                ],
-                alignment: 'center'
+                text: isDeduction
+                    ? [{ text: 'Deduct', bold: true, decoration: 'underline' }, { text: ` ${row.name}` }]
+                    : row.name,
+                style: 'tableCell',
+                ...thaiFont(row.name)
             },
+            ...cells
+        ]
+    })
+
+    // Blank row: the reference form floats the total clear of the last fee line.
+    const spacerRow: any[] = Array.from({ length: amountCols + 1 }, () => ({ text: ' ', style: 'tableCell' }))
+
+    // Fixed indent from the table's left edge, not centring: the description column is '*', so its
+    // width follows the number of deduction columns and a centred label would sit at a different
+    // place in the Instalment box than in the Annual one.
+    const totalRow: any[] = [
+        { text: 'Total', style: 'totalLabel', alignment: 'left', margin: [APPENDIX_TOTAL_INDENT, 0, 0, 0] },
+        ...Array.from({ length: amountCols - 1 }, blank),
+        ruledAmount(total, { bold: true, double: true })
+    ]
+
+    return {
+        table: {
+            widths: ['*', ...Array(amountCols).fill(APPENDIX_AMOUNT_COL)],
+            body: [...body, spacerRow, totalRow]
+        },
+        layout: {
+            hLineWidth: () => 0,
+            vLineWidth: () => 0,
+            paddingLeft: () => 2,
+            paddingRight: () => 2,
+            paddingTop: () => 5,
+            paddingBottom: () => 5
+        }
+    }
+}
+
+export function createInstalmentAppendix(data: any = null) {
+    if (!data) return null
+    const { yearGroup = '', instalment = {}, annual = {} } = data
+
+    // The section name sits above its box on the reference form; only the year group and the
+    // ledger are enclosed.
+    const section = (title: string, breakdown: any) => ({
+        stack: [
+            { text: title, style: 'appendixSectionTitle', margin: [0, 0, 0, 3] },
             {
-                width: '*',
-                stack: [
-                    authorisedNode,
-                    {
-                        canvas: [{ type: 'line', x1: 20, y1: 0, x2: 200, y2: 0, lineWidth: 1, lineColor: '#000000' }]
-                    },
-                    {
-                        text: 'Authorised officer',
-                        style: 'signatureLabel',
-                        alignment: 'center',
-                        margin: [0, 5, 0, 0]
-                    },
-                    {
-                        text: authorisedTitle,
-                        style: 'signatureLabel',
-                        alignment: 'center',
-                        margin: [0, 1, 0, 0]
-                    }
-                ],
-                alignment: 'center'
+                table: {
+                    widths: ['*'],
+                    body: [
+                        [
+                            {
+                                stack: [
+                                    {
+                                        text: `Year ${yearGroup}`.replace('Year Year', 'Year'),
+                                        style: 'appendixYearTitle',
+                                        margin: [0, 0, 0, 10]
+                                    },
+                                    appendixBreakdownTable(breakdown)
+                                ],
+                                margin: [4, 4, 4, 10]
+                            }
+                        ]
+                    ]
+                },
+                layout: BOX_LAYOUT
             }
         ],
-        margin: [0, 8, 0, 0]
+        margin: [0, 0, 0, 18]
+    })
+
+    return {
+        pageBreak: 'before',
+        stack: [
+            // Boxed, right-aligned label — a tab-like marker rather than a page heading.
+            {
+                columns: [
+                    { width: '*', text: '' },
+                    {
+                        width: 'auto',
+                        table: { widths: ['auto'], body: [[{ text: 'Appendix', style: 'appendixTitle' }]] },
+                        layout: BOX_LAYOUT
+                    }
+                ],
+                margin: [0, 0, 0, 10]
+            },
+            section('Instalment', instalment),
+            section('Annual', annual)
+        ]
     }
 }
 
@@ -524,9 +827,31 @@ export function getBaseStyles() {
             bold: false,
             color: '#000000'
         },
+        noteTitle: {
+            fontSize: 8,
+            bold: true,
+            color: '#000000'
+        },
         noteText: {
             fontSize: 6,
             color: '#333333'
+        },
+        appendixTitle: {
+            fontSize: 12,
+            bold: true,
+            color: '#000000'
+        },
+        appendixSectionTitle: {
+            fontSize: 9,
+            bold: true,
+            color: '#000000'
+        },
+        appendixYearTitle: {
+            fontSize: 8.5,
+            bold: true,
+            italics: true,
+            decoration: 'underline',
+            color: '#000000'
         },
         paymentTitle: {
             fontSize: 9,
@@ -557,22 +882,36 @@ export function getBaseStyles() {
 }
 
 // ---------------------------------------------------------------------------
-// Page footer – school address + contact line, rendered on every page
+// Invoice styles – getBaseStyles() re-sized for the serif reference form.
+// Kept separate so receipts, which share getBaseStyles(), are unaffected.
 // ---------------------------------------------------------------------------
-export function createPageFooter(data: any = {}) {
-    const {
-        schoolName = "King's College International School Bangkok",
-        address = '727 Ratchadapisek Road, Bang Phongphang, Yannawa, Bangkok 10120, Thailand',
-        contactLine = '+66 (0) 2481 9955, finance@kingsbangkok.ac.th, www.kingsbangkok.ac.th'
-    } = data
-
-    return () => ({
-        stack: [
-            { text: `${schoolName}  ${address}`, style: 'addressText', alignment: 'center' },
-            { text: contactLine, style: 'addressText', alignment: 'center', margin: [0, 1, 0, 0] }
-        ],
-        margin: [40, 8, 40, 0]
-    })
+export function getInvoiceStyles() {
+    return {
+        ...getBaseStyles(),
+        schoolName: { fontSize: 14, bold: true, color: '#000000' },
+        managedByLabel: { fontSize: 9.5, color: '#000000' },
+        schoolLocation: { fontSize: 10.5, bold: true, color: '#000000' },
+        addressText: { fontSize: 8.5, color: '#000000' },
+        invoiceTitle: { fontSize: 13, bold: true, color: '#000000' },
+        infoLabel: { fontSize: 9, color: '#000000' },
+        infoValue: { fontSize: 9, color: '#000000' },
+        tableHeader: { fontSize: 9, bold: true, color: '#000000' },
+        tableCell: { fontSize: 9, color: '#000000' },
+        totalWordsCell: { fontSize: 9, color: '#000000' },
+        totalLabel: { fontSize: 9, bold: true, color: '#000000' },
+        totalValue: { fontSize: 9, color: '#000000' },
+        noteTitle: { fontSize: 8.5, bold: true, color: '#000000' },
+        noteText: { fontSize: 8.5, color: '#000000' },
+        paymentTitle: { fontSize: 9, bold: true, color: '#000000' },
+        bankDetailLabel: { fontSize: 8.5, color: '#000000' },
+        bankDetailValue: { fontSize: 8.5, color: '#000000' },
+        signatureLabel: { fontSize: 9, color: '#000000' },
+        signatureName: { fontSize: 9, color: '#000000' },
+        signatureTitle: { fontSize: 9, bold: true, color: '#000000' },
+        appendixTitle: { fontSize: 10, bold: true, color: '#000000' },
+        appendixSectionTitle: { fontSize: 9.5, bold: true, color: '#000000' },
+        appendixYearTitle: { fontSize: 9.5, bold: true, decoration: 'underline', color: '#000000' }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -599,17 +938,17 @@ export function formatCurrency(value: any): string {
 // ---------------------------------------------------------------------------
 // Document builder
 // ---------------------------------------------------------------------------
-export function buildDocDefinition({ header, studentInfo, content, styles = {}, headerData = {} }: any) {
+export function buildDocDefinition({ header, studentInfo, content, styles = {} }: any) {
     const docDef: any = {
+        // No page footer: the reference form ends at the signatures.
         ...getDefaultPageSettings(),
         content: [header, studentInfo, ...content].filter(Boolean),
-        footer: createPageFooter(headerData),
         styles: {
-            ...getBaseStyles(),
+            ...getInvoiceStyles(),
             ...styles
         },
         defaultStyle: {
-            font: DEFAULT_FONT
+            font: INVOICE_FONT
         }
     }
 
