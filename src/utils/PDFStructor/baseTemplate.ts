@@ -642,25 +642,61 @@ function ruledAmount(value: number, opts: { bold?: boolean; double?: boolean } =
 // column, every "Deduct" row puts its (negative) figure in the current column and the resulting
 // balance one column to the right, and any remaining fees land in the final column alongside the
 // total. The number of amount columns therefore follows the number of deductions.
-// Max individual deduction steps before collapsing to a single "Total Discounts" row.
-// More than 2 steps creates 4+ amount columns which overflows an A4 content box.
+// Max cascade steps before switching to flat-list layout.
+// Cascade with > 2 deductions creates too many columns and overflows the A4 box.
 const MAX_CASCADE_STEPS = 2
 
 function appendixBreakdownTable(section: { items?: any[]; discountRows?: any[]; total?: number } = {}) {
     const { items = [], discountRows = [], total = 0 } = section
+    const useFlatLayout = discountRows.length > MAX_CASCADE_STEPS
 
-    // If too many individual deductions, collapse them into one combined row to avoid overflow.
-    const collapsedDiscountRows: typeof discountRows =
-        discountRows.length > MAX_CASCADE_STEPS
-            ? [{ name: 'Discounts', amount: discountRows.reduce((s: number, r: any) => s + r.amount, 0) }]
-            : discountRows
-
-    // Opening fee, then the deductions that bite into it, then any further fees — the order the
-    // reference form reads in, which is not the order the payload stores them in.
     const [openingItem, ...remainingItems] = items
-    const rows = [...(openingItem ? [openingItem] : []), ...collapsedDiscountRows, ...remainingItems]
 
-    const amountCols = collapsedDiscountRows.length + 1
+    // ── Flat layout (> 2 deductions): 1 amount column, all rows in same column ──
+    if (useFlatLayout) {
+        const blank = () => ({ text: '', style: 'tableCell' })
+        const allRows = [
+            ...(openingItem ? [openingItem] : []),
+            ...discountRows,
+            ...remainingItems
+        ]
+        const body = allRows.map((row: any) => {
+            const isDeduction = row.amount < 0
+            return [
+                {
+                    text: isDeduction
+                        ? [{ text: 'Deduct', bold: true, decoration: 'underline' }, { text: ` ${row.name}` }]
+                        : row.name,
+                    style: 'tableCell',
+                    ...thaiFont(row.name)
+                },
+                isDeduction
+                    ? ruledAmount(row.amount)
+                    : { text: formatCurrency(row.amount), alignment: 'right', style: 'tableCell' }
+            ]
+        })
+        const spacerRow = [{ text: ' ', style: 'tableCell' }, blank()]
+        const totalRow = [
+            { text: 'Total', style: 'totalLabel', alignment: 'left', margin: [APPENDIX_TOTAL_INDENT, 0, 0, 0] },
+            ruledAmount(total, { bold: true, double: true })
+        ]
+        return {
+            table: { widths: ['*', APPENDIX_AMOUNT_COL], body: [...body, spacerRow, totalRow] },
+            layout: {
+                hLineWidth: () => 0,
+                vLineWidth: () => 0,
+                paddingLeft: () => 2,
+                paddingRight: () => 2,
+                paddingTop: () => 5,
+                paddingBottom: () => 5
+            }
+        }
+    }
+
+    // ── Cascade layout (≤ 2 deductions): staircase running totals ──
+    const rows = [...(openingItem ? [openingItem] : []), ...discountRows, ...remainingItems]
+
+    const amountCols = discountRows.length + 1
     const blank = () => ({ text: '', style: 'tableCell' })
 
     let col = 0
@@ -676,7 +712,6 @@ function appendixBreakdownTable(section: { items?: any[]; discountRows?: any[]; 
             cells[col] = { text: formatCurrency(running), alignment: 'right', style: 'tableCell' }
         } else {
             running += row.amount
-            // A fee added after the deductions belongs in the final column, beside the total.
             cells[col] = { text: formatCurrency(row.amount), alignment: 'right', style: 'tableCell' }
         }
 
@@ -692,12 +727,7 @@ function appendixBreakdownTable(section: { items?: any[]; discountRows?: any[]; 
         ]
     })
 
-    // Blank row: the reference form floats the total clear of the last fee line.
     const spacerRow: any[] = Array.from({ length: amountCols + 1 }, () => ({ text: ' ', style: 'tableCell' }))
-
-    // Fixed indent from the table's left edge, not centring: the description column is '*', so its
-    // width follows the number of deduction columns and a centred label would sit at a different
-    // place in the Instalment box than in the Annual one.
     const totalRow: any[] = [
         { text: 'Total', style: 'totalLabel', alignment: 'left', margin: [APPENDIX_TOTAL_INDENT, 0, 0, 0] },
         ...Array.from({ length: amountCols - 1 }, blank),
