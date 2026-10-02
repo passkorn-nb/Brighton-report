@@ -642,15 +642,25 @@ function ruledAmount(value: number, opts: { bold?: boolean; double?: boolean } =
 // column, every "Deduct" row puts its (negative) figure in the current column and the resulting
 // balance one column to the right, and any remaining fees land in the final column alongside the
 // total. The number of amount columns therefore follows the number of deductions.
+// Max individual deduction steps before collapsing to a single "Total Discounts" row.
+// More than 2 steps creates 4+ amount columns which overflows an A4 content box.
+const MAX_CASCADE_STEPS = 2
+
 function appendixBreakdownTable(section: { items?: any[]; discountRows?: any[]; total?: number } = {}) {
     const { items = [], discountRows = [], total = 0 } = section
+
+    // If too many individual deductions, collapse them into one combined row to avoid overflow.
+    const collapsedDiscountRows: typeof discountRows =
+        discountRows.length > MAX_CASCADE_STEPS
+            ? [{ name: 'Discounts', amount: discountRows.reduce((s: number, r: any) => s + r.amount, 0) }]
+            : discountRows
 
     // Opening fee, then the deductions that bite into it, then any further fees — the order the
     // reference form reads in, which is not the order the payload stores them in.
     const [openingItem, ...remainingItems] = items
-    const rows = [...(openingItem ? [openingItem] : []), ...discountRows, ...remainingItems]
+    const rows = [...(openingItem ? [openingItem] : []), ...collapsedDiscountRows, ...remainingItems]
 
-    const amountCols = discountRows.length + 1
+    const amountCols = collapsedDiscountRows.length + 1
     const blank = () => ({ text: '', style: 'tableCell' })
 
     let col = 0
