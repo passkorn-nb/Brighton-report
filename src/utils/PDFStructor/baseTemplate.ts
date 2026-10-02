@@ -642,61 +642,22 @@ function ruledAmount(value: number, opts: { bold?: boolean; double?: boolean } =
 // column, every "Deduct" row puts its (negative) figure in the current column and the resulting
 // balance one column to the right, and any remaining fees land in the final column alongside the
 // total. The number of amount columns therefore follows the number of deductions.
-// Max cascade steps before switching to flat-list layout.
-// Cascade with > 2 deductions creates too many columns and overflows the A4 box.
-const MAX_CASCADE_STEPS = 2
+// Conservative inner width for dynamic cascade columns — keeps amount cols within page bounds
+const INNER_BOX_WIDTH = 440
+// Minimum description column width to keep labels readable
+const MIN_DESC_WIDTH = 100
 
 function appendixBreakdownTable(section: { items?: any[]; discountRows?: any[]; total?: number } = {}) {
     const { items = [], discountRows = [], total = 0 } = section
-    const useFlatLayout = discountRows.length > MAX_CASCADE_STEPS
 
     const [openingItem, ...remainingItems] = items
 
-    // ── Flat layout (> 2 deductions): 1 amount column, all rows in same column ──
-    if (useFlatLayout) {
-        const blank = () => ({ text: '', style: 'tableCell' })
-        const allRows = [
-            ...(openingItem ? [openingItem] : []),
-            ...discountRows,
-            ...remainingItems
-        ]
-        const body = allRows.map((row: any) => {
-            const isDeduction = row.amount < 0
-            return [
-                {
-                    text: isDeduction
-                        ? [{ text: 'Deduct', bold: true, decoration: 'underline' }, { text: ` ${row.name}` }]
-                        : row.name,
-                    style: 'tableCell',
-                    ...thaiFont(row.name)
-                },
-                isDeduction
-                    ? ruledAmount(row.amount)
-                    : { text: formatCurrency(row.amount), alignment: 'right', style: 'tableCell' }
-            ]
-        })
-        const spacerRow = [{ text: ' ', style: 'tableCell' }, blank()]
-        const totalRow = [
-            { text: 'Total', style: 'totalLabel', alignment: 'left', margin: [APPENDIX_TOTAL_INDENT, 0, 0, 0] },
-            ruledAmount(total, { bold: true, double: true })
-        ]
-        return {
-            table: { widths: ['*', APPENDIX_AMOUNT_COL], body: [...body, spacerRow, totalRow] },
-            layout: {
-                hLineWidth: () => 0,
-                vLineWidth: () => 0,
-                paddingLeft: () => 2,
-                paddingRight: () => 2,
-                paddingTop: () => 5,
-                paddingBottom: () => 5
-            }
-        }
-    }
-
-    // ── Cascade layout (≤ 2 deductions): staircase running totals ──
+    // ── Cascade layout: staircase running totals ──
     const rows = [...(openingItem ? [openingItem] : []), ...discountRows, ...remainingItems]
 
     const amountCols = discountRows.length + 1
+    // Dynamic column width — shrinks when there are many deductions to avoid overflow
+    const dynamicAmountCol = Math.max(55, Math.floor((INNER_BOX_WIDTH - MIN_DESC_WIDTH) / amountCols))
     const blank = () => ({ text: '', style: 'tableCell' })
 
     let col = 0
@@ -736,7 +697,7 @@ function appendixBreakdownTable(section: { items?: any[]; discountRows?: any[]; 
 
     return {
         table: {
-            widths: ['*', ...Array(amountCols).fill(APPENDIX_AMOUNT_COL)],
+            widths: ['*', ...Array(amountCols).fill(dynamicAmountCol)],
             body: [...body, spacerRow, totalRow]
         },
         layout: {
