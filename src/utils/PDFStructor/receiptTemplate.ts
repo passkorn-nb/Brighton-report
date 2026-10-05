@@ -261,12 +261,18 @@ export function createReceiptItemsTable(items: any[] = [], options: any = {}) {
 }
 
 export function createPaymentMethodLine(data: any = {}) {
-    const { paymentMethod = '' } = data
-    return {
-        text: [{ text: 'Payment method : ', bold: true }, { text: valueOrDash(paymentMethod) }],
-        style: 'paymentMethodLine',
-        margin: [0, 4, 0, 12]
+    const { paymentMethod = '', bankTransactionId = '' } = data
+    const stack: any[] = [
+        { text: [{ text: 'Payment method : ', bold: true }, { text: valueOrDash(paymentMethod) }], style: 'paymentMethodLine' }
+    ]
+    if (bankTransactionId) {
+        stack.push({
+            text: [{ text: 'Bank Transaction ID : ', bold: true }, { text: bankTransactionId }],
+            style: 'paymentMethodLine',
+            margin: [0, 2, 0, 0]
+        })
     }
+    return { stack, margin: [0, 4, 0, 12] }
 }
 
 export function createReceiptNotes() {
@@ -347,8 +353,8 @@ export function createReceiptSignatures(data: any = {}) {
 
 export function createReceiptFooter(data: any = {}) {
     const {
-        addressLine = "King's College International School Bangkok  727 Ratchadaphisek Road, Bang Phongphang, Yannawa, Bangkok 10120 Thailand",
-        contactLine = '+66 (0) 2481 9955, finance@kingsbangkok.ac.th, www.kingsbangkok.ac.th'
+        addressLine = 'Brighton College Bangkok, Vibhavadi  998/1 Vibhavadi Rangsit Road, Lad Yao, Chatuchak, Bangkok 10900',
+        contactLine = '+66 (2) 513 0270 / +66 (84) 676 0616, admission@brightoncollegevibha.ac.th'
     } = data
 
     return () => ({

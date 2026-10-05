@@ -29,7 +29,6 @@ export function buildSchoolBusReport(data: any = {}) {
     return buildDocDefinition({
         header,
         studentInfo,
-        content: [feeTable, latePaymentNote, paymentMethods, signature],
-        headerData: data.header
+        content: [feeTable, latePaymentNote, paymentMethods, signature]
     })
 }

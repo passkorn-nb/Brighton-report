@@ -9,7 +9,7 @@ import {
 } from './baseTemplate'
 
 /**
- * Builds a Holiday Camp (King's student) invoice PDF.
+ * Builds a Holiday Camp (enrolled student) invoice PDF.
  * Items include camp fees and discounts (e.g. early bird) as line items.
  */
 export function buildHolidayCampReport(data: any = {}) {
@@ -28,7 +28,6 @@ export function buildHolidayCampReport(data: any = {}) {
     return buildDocDefinition({
         header,
         studentInfo,
-        content: [feeTable, latePaymentNote, paymentMethods, signature],
-        headerData: data.header
+        content: [feeTable, latePaymentNote, paymentMethods, signature]
     })
 }

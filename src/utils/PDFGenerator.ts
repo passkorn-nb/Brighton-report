@@ -12,6 +12,15 @@ const fontDef: any = {
         bold: path.join(fontsDir, 'Sarabun-Medium.ttf'),
         italics: path.join(fontsDir, 'Sarabun-Italic.ttf'),
         bolditalics: path.join(fontsDir, 'Sarabun-MediumItalic.ttf')
+    },
+    // Standard-14 PDF font — resolved by name, nothing to ship or embed. Invoices are
+    // set in it to match the school's reference form. Latin-only: any Thai text is
+    // routed to Sarabun by thaiFont() before it reaches the renderer.
+    Times: {
+        normal: 'Times-Roman',
+        bold: 'Times-Bold',
+        italics: 'Times-Italic',
+        bolditalics: 'Times-BoldItalic'
     }
 }
 

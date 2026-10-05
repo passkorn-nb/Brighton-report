@@ -7,6 +7,7 @@ import { buildHolidayCampReport } from './holidayCampReport'
 import { buildHolidayCampExternalReport } from './holidayCampExternalReport'
 import { buildStudentActivitiesReport } from './studentActivitiesReport'
 import { buildReceiptReport } from './receiptReport'
+import { buildReceiptTaxInvoiceReport } from './receiptTaxInvoiceReport'
 
 export enum ReportType {
     TUITION_FEE = 'TUITION_FEE',
@@ -17,7 +18,8 @@ export enum ReportType {
     HOLIDAY_CAMP = 'HOLIDAY_CAMP',
     HOLIDAY_CAMP_EXTERNAL = 'HOLIDAY_CAMP_EXTERNAL',
     STUDENT_ACTIVITIES = 'STUDENT_ACTIVITIES',
-    RECEIPT = 'RECEIPT'
+    RECEIPT = 'RECEIPT',
+    RECEIPT_TAX_INVOICE = 'RECEIPT_TAX_INVOICE'
 }
 
 /**
@@ -47,13 +49,13 @@ export const REPORT_TYPES: Record<string, { label: string; description: string; 
         builder: buildSchoolTripReport
     },
     [ReportType.ECA]: {
-        label: 'ECA Sport & Music',
+        label: 'CCA Sport & Music',
         description: 'Extra-curricular activities invoice for sport and music (gymnastics, basketball, piano, etc.)',
         builder: buildEcaReport
     },
     [ReportType.HOLIDAY_CAMP]: {
-        label: "Holiday Camp (King's Student)",
-        description: "Holiday camp invoice for King's College students with early bird discounts",
+        label: 'Holiday Camp (Enrolled Student)',
+        description: 'Holiday camp invoice for Brighton College Bangkok students with early bird discounts',
         builder: buildHolidayCampReport
     },
     [ReportType.HOLIDAY_CAMP_EXTERNAL]: {
@@ -70,6 +72,12 @@ export const REPORT_TYPES: Record<string, { label: string; description: string; 
         label: 'Receipt',
         description: 'Payment receipt with invoice/credit-note breakdown, overpayment, and signatures',
         builder: buildReceiptReport
+    },
+    [ReportType.RECEIPT_TAX_INVOICE]: {
+        label: 'Receipt / Tax Invoice',
+        description:
+            'Bilingual ใบเสร็จรับเงิน / ใบกำกับภาษี on the school\'s pre-printed form — VAT breakdown, Buddhist-era date, Thai amount in words',
+        builder: buildReceiptTaxInvoiceReport
     }
 }
 
