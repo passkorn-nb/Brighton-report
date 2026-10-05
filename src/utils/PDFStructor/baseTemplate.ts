@@ -88,10 +88,10 @@ function labelValueBox(rows: Array<[string, string, boolean?]>) {
     }
 }
 
-// Student box and due-date box run to 70% of the content width; the No/Date and PIN boxes
-// take the remainder. Proportions taken from the reference form.
-const INFO_LEFT_WIDTH = '70%'
-const INFO_GAP_WIDTH = '4%'
+// Student box and due-date box run to 68% of the content width; the No/Date and PIN boxes
+// take the remainder (~30%). Proportions calibrated to reference form.
+const INFO_LEFT_WIDTH = '68%'
+const INFO_GAP_WIDTH = '2%'
 
 export function createStudentInfo(data: any = {}) {
     const {
