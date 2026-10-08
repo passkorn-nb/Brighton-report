@@ -24,7 +24,8 @@ export function buildTuitionFeeReport(data: any = {}) {
     const studentInfo = createStudentInfo(data.studentInfo)
 
     const semesterLabel = TERM_LABELS[data.semesterLabel] || data.semesterLabel || ''
-    const period = semesterLabel && data.studentInfo?.schoolYear ? `${semesterLabel}/${data.studentInfo.schoolYear}` : ''
+    const schoolYear = (data.studentInfo?.schoolYear ?? '').replace(/\//g, '-')
+    const period = semesterLabel && schoolYear ? `${semesterLabel}/${schoolYear}` : ''
 
     const feeTable = createFeeTable(data.items || [], {
         amountInWords: data.amountInWords || '',
