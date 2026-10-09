@@ -39,27 +39,27 @@ export function createHeader(data: any = {}) {
     const textStack: any[] = []
 
     if (nameEn) {
-        textStack.push({ text: nameEn, style: 'schoolName', alignment: 'center', margin: [0, 0, 0, 13] })
+        textStack.push({ text: nameEn, style: 'schoolName', alignment: 'center', margin: [0, 0, 0, 6] })
     }
     if (managedBy) {
-        textStack.push({ text: 'Managed by', style: 'managedByLabel', alignment: 'center', margin: [0, 0, 0, 13] })
-        textStack.push({ text: managedBy, style: 'schoolLocation', alignment: 'center', margin: [0, 0, 0, 13] })
+        textStack.push({ text: 'Managed by', style: 'managedByLabel', alignment: 'center', margin: [0, 0, 0, 6] })
+        textStack.push({ text: managedBy, style: 'schoolLocation', alignment: 'center', margin: [0, 0, 0, 6] })
     }
     if (addressEn) {
-        textStack.push({ text: addressEn, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 5] })
+        textStack.push({ text: addressEn, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 3] })
     }
     const contactLine = [phone, email].filter(Boolean).join('  Email : ')
     if (contactLine) {
-        textStack.push({ text: contactLine, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 18] })
+        textStack.push({ text: contactLine, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 10] })
     }
 
     // Logo on top-left (wide banner with crest + text), then school text block in centre.
     const stackItems: any[] = []
     if (LOGO_BASE64) {
-        stackItems.push({ image: LOGO_BASE64, width: 180, alignment: 'left', margin: [0, 0, 0, 10] })
+        stackItems.push({ image: LOGO_BASE64, width: 140, alignment: 'left', margin: [0, 0, 0, 6] })
     }
     stackItems.push(...textStack)
-    stackItems.push({ text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, 0, 0, 16] })
+    stackItems.push({ text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, 0, 0, 10] })
 
     return { stack: stackItems }
 }
