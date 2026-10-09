@@ -57,7 +57,7 @@ export function createHeader(data: any = {}) {
     const headerRow: any = LOGO_BASE64
         ? {
               columns: [
-                  { width: 70, image: LOGO_BASE64, fit: [60, 70], alignment: 'left', margin: [0, 0, 0, 10] },
+                  { width: 70, image: LOGO_BASE64, fit: [60, 110], alignment: 'left', margin: [0, 0, 0, 10] },
                   { width: '*', stack: textStack }
               ]
           }
