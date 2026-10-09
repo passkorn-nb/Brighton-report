@@ -3,7 +3,7 @@ import {
     createStudentInfo,
     createFeeTable,
     createLatePaymentNote,
-    createPaymentMethods,
+    createSimplePaymentMethods,
     createSignatureSection,
     buildDocDefinition
 } from './baseTemplate'
@@ -23,7 +23,7 @@ export function buildSchoolBusReport(data: any = {}) {
     })
 
     const latePaymentNote = createLatePaymentNote(data.latePayment)
-    const paymentMethods = createPaymentMethods(data.paymentMethods)
+    const paymentMethods = createSimplePaymentMethods(data.paymentDetails || data.paymentMethods)
     const signature = createSignatureSection(data.signature)
 
     return buildDocDefinition({
