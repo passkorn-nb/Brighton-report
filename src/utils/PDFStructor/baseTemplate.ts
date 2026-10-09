@@ -918,20 +918,20 @@ export function getPageHeader(data: any = {}) {
     const { nameEn = '', managedBy = '', addressEn = '', phone = '', email = '' } = data
     return () => {
         const textStack: any[] = []
-        if (nameEn) textStack.push({ text: nameEn, style: 'schoolName', alignment: 'center', margin: [0, 0, 0, 3] })
+        if (nameEn) textStack.push({ text: nameEn, style: 'schoolName', alignment: 'center', margin: [0, 0, 0, 6] })
         if (managedBy) {
-            textStack.push({ text: 'Managed by', style: 'managedByLabel', alignment: 'center' })
-            textStack.push({ text: managedBy, style: 'schoolLocation', alignment: 'center', margin: [0, 0, 0, 3] })
+            textStack.push({ text: 'Managed by', style: 'managedByLabel', alignment: 'center', margin: [0, 0, 0, 2] })
+            textStack.push({ text: managedBy, style: 'schoolLocation', alignment: 'center', margin: [0, 0, 0, 8] })
         }
-        if (addressEn) textStack.push({ text: addressEn, style: 'addressText', alignment: 'center' })
+        if (addressEn) textStack.push({ text: addressEn, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 2] })
         const contactLine = [phone, email].filter(Boolean).join('  Email : ')
         if (contactLine) textStack.push({ text: contactLine, style: 'addressText', alignment: 'center' })
 
         return {
-            margin: [40, 15, 40, 0],
+            margin: [40, 20, 40, 0],
             stack: [
                 LOGO_BASE64
-                    ? { image: LOGO_BASE64, width: 110, alignment: 'left', margin: [0, 0, 0, 4] }
+                    ? { image: LOGO_BASE64, width: 110, alignment: 'left', margin: [0, 0, 0, 8] }
                     : null,
                 ...textStack
             ].filter(Boolean)
