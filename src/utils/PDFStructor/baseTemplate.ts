@@ -918,12 +918,12 @@ export function getPageHeader(data: any = {}) {
     const { nameEn = '', managedBy = '', addressEn = '', phone = '', email = '' } = data
     return () => {
         const textStack: any[] = []
-        if (nameEn) textStack.push({ text: nameEn, style: 'schoolName', alignment: 'center', margin: [0, 0, 0, 6] })
+        if (nameEn) textStack.push({ text: nameEn, style: 'schoolName', alignment: 'center', margin: [0, 0, 0, 12] })
         if (managedBy) {
-            textStack.push({ text: 'Managed by', style: 'managedByLabel', alignment: 'center', margin: [0, 0, 0, 2] })
-            textStack.push({ text: managedBy, style: 'schoolLocation', alignment: 'center', margin: [0, 0, 0, 8] })
+            textStack.push({ text: 'Managed by', style: 'managedByLabel', alignment: 'center', margin: [0, 0, 0, 5] })
+            textStack.push({ text: managedBy, style: 'schoolLocation', alignment: 'center', margin: [0, 0, 0, 14] })
         }
-        if (addressEn) textStack.push({ text: addressEn, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 2] })
+        if (addressEn) textStack.push({ text: addressEn, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 4] })
         const contactLine = [phone, email].filter(Boolean).join('  Email : ')
         if (contactLine) textStack.push({ text: contactLine, style: 'addressText', alignment: 'center' })
 
@@ -931,7 +931,7 @@ export function getPageHeader(data: any = {}) {
             margin: [40, 20, 40, 0],
             stack: [
                 LOGO_BASE64
-                    ? { image: LOGO_BASE64, width: 110, alignment: 'left', margin: [0, 0, 0, 8] }
+                    ? { image: LOGO_BASE64, width: 110, alignment: 'left', margin: [0, 0, 0, 14] }
                     : null,
                 ...textStack
             ].filter(Boolean)
@@ -963,7 +963,7 @@ export function buildDocDefinition({ header, studentInfo, content, styles = {} }
     const docDef: any = {
         // Larger top margin to accommodate the repeating header block
         pageSize: 'A4' as const,
-        pageMargins: [40, 150, 40, 40],
+        pageMargins: [40, 180, 40, 40],
         header: pageHeader,
         content: [invoiceTitle, studentInfo, ...content].filter(Boolean),
         styles: {
