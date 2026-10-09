@@ -53,22 +53,15 @@ export function createHeader(data: any = {}) {
         textStack.push({ text: contactLine, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 18] })
     }
 
-    // Logo on the left, text header in the middle.
-    const headerRow: any = LOGO_BASE64
-        ? {
-              columns: [
-                  { width: 70, stack: [{ image: LOGO_BASE64, width: 55, alignment: 'left' }], margin: [0, 0, 0, 10] },
-                  { width: '*', stack: textStack }
-              ]
-          }
-        : { stack: textStack }
-
-    return {
-        stack: [
-            headerRow,
-            { text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, 0, 0, 16] }
-        ]
+    // Logo on top-left (wide banner with crest + text), then school text block in centre.
+    const stackItems: any[] = []
+    if (LOGO_BASE64) {
+        stackItems.push({ image: LOGO_BASE64, width: 180, alignment: 'left', margin: [0, 0, 0, 10] })
     }
+    stackItems.push(...textStack)
+    stackItems.push({ text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, 0, 0, 16] })
+
+    return { stack: stackItems }
 }
 
 // ---------------------------------------------------------------------------
