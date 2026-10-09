@@ -34,34 +34,9 @@ export const INVOICE_FONT = 'Times'
 // "INVOICE" title. No crest: the reference form is all type.
 // ---------------------------------------------------------------------------
 export function createHeader(data: any = {}) {
-    const { nameEn = '', managedBy = '', addressEn = '', phone = '', email = '' } = data
-
-    const textStack: any[] = []
-
-    if (nameEn) {
-        textStack.push({ text: nameEn, style: 'schoolName', alignment: 'center', margin: [0, 0, 0, 6] })
-    }
-    if (managedBy) {
-        textStack.push({ text: 'Managed by', style: 'managedByLabel', alignment: 'center', margin: [0, 0, 0, 6] })
-        textStack.push({ text: managedBy, style: 'schoolLocation', alignment: 'center', margin: [0, 0, 0, 6] })
-    }
-    if (addressEn) {
-        textStack.push({ text: addressEn, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 3] })
-    }
-    const contactLine = [phone, email].filter(Boolean).join('  Email : ')
-    if (contactLine) {
-        textStack.push({ text: contactLine, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 10] })
-    }
-
-    // Logo on top-left (wide banner with crest + text), then school text block in centre.
-    const stackItems: any[] = []
-    if (LOGO_BASE64) {
-        stackItems.push({ image: LOGO_BASE64, width: 140, alignment: 'left', margin: [0, 0, 0, 6] })
-    }
-    stackItems.push(...textStack)
-    stackItems.push({ text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, 0, 0, 10] })
-
-    return { stack: stackItems }
+    // Header is now rendered as pdfmake page header on every page (see buildDocDefinition).
+    // This function just carries the data forward; the actual stack is built in getPageHeader().
+    return { __data: data, text: '' }
 }
 
 // ---------------------------------------------------------------------------
@@ -936,18 +911,30 @@ export function getDefaultPageSettings() {
 }
 
 /**
- * Page header function — renders a small Brighton logo at the top of every page
- * EXCEPT page 1 (which already has the full-size banner logo in content).
+ * Page header function — renders a compact Brighton header
+ * (logo + school name + managed-by + address) at the top of every page.
  */
-export function getPageHeader() {
-    if (!LOGO_BASE64) return undefined
-    return (currentPage: number) => {
-        if (currentPage === 1) return null
+export function getPageHeader(data: any = {}) {
+    const { nameEn = '', managedBy = '', addressEn = '', phone = '', email = '' } = data
+    return () => {
+        const textStack: any[] = []
+        if (nameEn) textStack.push({ text: nameEn, style: 'schoolName', alignment: 'center', margin: [0, 0, 0, 3] })
+        if (managedBy) {
+            textStack.push({ text: 'Managed by', style: 'managedByLabel', alignment: 'center' })
+            textStack.push({ text: managedBy, style: 'schoolLocation', alignment: 'center', margin: [0, 0, 0, 3] })
+        }
+        if (addressEn) textStack.push({ text: addressEn, style: 'addressText', alignment: 'center' })
+        const contactLine = [phone, email].filter(Boolean).join('  Email : ')
+        if (contactLine) textStack.push({ text: contactLine, style: 'addressText', alignment: 'center' })
+
         return {
-            image: LOGO_BASE64,
-            width: 90,
-            alignment: 'left',
-            margin: [40, 15, 40, 0]
+            margin: [40, 15, 40, 0],
+            stack: [
+                LOGO_BASE64
+                    ? { image: LOGO_BASE64, width: 110, alignment: 'left', margin: [0, 0, 0, 4] }
+                    : null,
+                ...textStack
+            ].filter(Boolean)
         }
     }
 }
@@ -967,17 +954,18 @@ export function formatCurrency(value: any): string {
 // Document builder
 // ---------------------------------------------------------------------------
 export function buildDocDefinition({ header, studentInfo, content, styles = {} }: any) {
-    const settings = getDefaultPageSettings()
-    const pageHeader = getPageHeader()
+    // Extract header data (passed as the output of createHeader — a stack with text items)
+    // and reuse it as page header on every page.
+    const headerData = (header && (header as any).__data) || {}
+    const pageHeader = getPageHeader(headerData)
+    // Append INVOICE title to content (used to be inside createHeader)
+    const invoiceTitle = { text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, 0, 0, 10] }
     const docDef: any = {
-        // No page footer: the reference form ends at the signatures.
-        ...settings,
-        // Give pages 2+ extra top margin for the small repeating logo header
-        ...(pageHeader && {
-            pageMargins: [40, 50, 40, 40],
-            header: pageHeader
-        }),
-        content: [header, studentInfo, ...content].filter(Boolean),
+        // Larger top margin to accommodate the repeating header block
+        pageSize: 'A4' as const,
+        pageMargins: [40, 150, 40, 40],
+        header: pageHeader,
+        content: [invoiceTitle, studentInfo, ...content].filter(Boolean),
         styles: {
             ...getInvoiceStyles(),
             ...styles
