@@ -294,7 +294,7 @@ export function createFeeTable(items: any[] = [], options: any = {}) {
 // ---------------------------------------------------------------------------
 // The reference form runs "REMARKS" inline with the first numbered remark, and boxes the
 // annual figure inside the second one. This column width keeps remark 2 aligned under remark 1.
-const REMARKS_LABEL_WIDTH = 48
+const REMARKS_LABEL_WIDTH = 60
 
 // Tight border box for the inline annual total — BOX_LAYOUT's padding is sized for the
 // info boxes and would swamp a figure sitting mid-sentence.
