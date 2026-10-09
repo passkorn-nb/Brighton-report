@@ -930,7 +930,25 @@ export function getInvoiceStyles() {
 export function getDefaultPageSettings() {
     return {
         pageSize: 'A4' as const,
+        // Extra top margin on page 2+ for the repeated small logo header
         pageMargins: [40, 28, 40, 40] as [number, number, number, number]
+    }
+}
+
+/**
+ * Page header function — renders a small Brighton logo at the top of every page
+ * EXCEPT page 1 (which already has the full-size banner logo in content).
+ */
+export function getPageHeader() {
+    if (!LOGO_BASE64) return undefined
+    return (currentPage: number) => {
+        if (currentPage === 1) return null
+        return {
+            image: LOGO_BASE64,
+            width: 90,
+            alignment: 'left',
+            margin: [40, 15, 40, 0]
+        }
     }
 }
 
@@ -949,9 +967,16 @@ export function formatCurrency(value: any): string {
 // Document builder
 // ---------------------------------------------------------------------------
 export function buildDocDefinition({ header, studentInfo, content, styles = {} }: any) {
+    const settings = getDefaultPageSettings()
+    const pageHeader = getPageHeader()
     const docDef: any = {
         // No page footer: the reference form ends at the signatures.
-        ...getDefaultPageSettings(),
+        ...settings,
+        // Give pages 2+ extra top margin for the small repeating logo header
+        ...(pageHeader && {
+            pageMargins: [40, 50, 40, 40],
+            header: pageHeader
+        }),
         content: [header, studentInfo, ...content].filter(Boolean),
         styles: {
             ...getInvoiceStyles(),
