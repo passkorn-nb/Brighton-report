@@ -8,6 +8,11 @@ export const DEFAULT_FONT = fs.existsSync(path.join(FONTS_DIR, 'GillSansMT-Regul
     ? 'GillSansMT'
     : 'Sarabun'
 
+const LOGO_PATH = path.resolve(process.cwd(), 'src/assets/images/brighton-logo.png')
+const LOGO_BASE64: string | null = fs.existsSync(LOGO_PATH)
+    ? `data:image/png;base64,${fs.readFileSync(LOGO_PATH).toString('base64')}`
+    : null
+
 const THAI_RE = /[฀-๿]/
 export function thaiFont(text: unknown): { font?: string } {
     return text != null && THAI_RE.test(String(text)) ? { font: 'Sarabun' } : {}
@@ -31,28 +36,39 @@ export const INVOICE_FONT = 'Times'
 export function createHeader(data: any = {}) {
     const { nameEn = '', managedBy = '', addressEn = '', phone = '', email = '' } = data
 
-    const stack: any[] = []
+    const textStack: any[] = []
 
-    // The name / operator / address lines each stand on their own, so they get generous leading.
-    // Address and contact line are a pair and stay tighter to each other than to their neighbours.
     if (nameEn) {
-        stack.push({ text: nameEn, style: 'schoolName', alignment: 'center', margin: [0, 0, 0, 13] })
+        textStack.push({ text: nameEn, style: 'schoolName', alignment: 'center', margin: [0, 0, 0, 13] })
     }
     if (managedBy) {
-        stack.push({ text: 'Managed by', style: 'managedByLabel', alignment: 'center', margin: [0, 0, 0, 13] })
-        stack.push({ text: managedBy, style: 'schoolLocation', alignment: 'center', margin: [0, 0, 0, 13] })
+        textStack.push({ text: 'Managed by', style: 'managedByLabel', alignment: 'center', margin: [0, 0, 0, 13] })
+        textStack.push({ text: managedBy, style: 'schoolLocation', alignment: 'center', margin: [0, 0, 0, 13] })
     }
     if (addressEn) {
-        stack.push({ text: addressEn, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 5] })
+        textStack.push({ text: addressEn, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 5] })
     }
     const contactLine = [phone, email].filter(Boolean).join('  Email : ')
     if (contactLine) {
-        stack.push({ text: contactLine, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 18] })
+        textStack.push({ text: contactLine, style: 'addressText', alignment: 'center', margin: [0, 0, 0, 18] })
     }
 
-    stack.push({ text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, 0, 0, 16] })
+    // Logo on the left, text header in the middle.
+    const headerRow: any = LOGO_BASE64
+        ? {
+              columns: [
+                  { width: 70, image: LOGO_BASE64, fit: [60, 70], alignment: 'left', margin: [0, 0, 0, 10] },
+                  { width: '*', stack: textStack }
+              ]
+          }
+        : { stack: textStack }
 
-    return { stack }
+    return {
+        stack: [
+            headerRow,
+            { text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, 0, 0, 16] }
+        ]
+    }
 }
 
 // ---------------------------------------------------------------------------
