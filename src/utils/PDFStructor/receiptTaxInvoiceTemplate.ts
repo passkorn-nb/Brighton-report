@@ -268,8 +268,7 @@ export function createTaxReceiptItems(items: any[] = [], options: any = {}) {
             { text: String(qty), style: 'trCell', alignment: 'center' },
             { text: formatCurrency(unit), style: 'trCell', alignment: 'right' },
             {
-                // Tax marker beside the figure, as on the printed form: N = non-VAT, V = VAT-able.
-                text: `${formatCurrency(item.amount ?? unit * qty)}${item.taxType ? '  ' + item.taxType : ''}`,
+                text: formatCurrency(item.amount ?? unit * qty),
                 style: 'trCell',
                 alignment: 'right'
             }

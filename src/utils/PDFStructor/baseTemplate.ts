@@ -120,12 +120,6 @@ export function createStudentInfo(data: any = {}) {
         ['Date', invoiceDate]
     ])
 
-    const rightStackItems: any[] = [invoiceBox]
-
-    // PIN/Classroom moves to the right column of the due-date row (Row 2), so it is NOT
-    // stacked here in Row 1.
-
-    // Same width as the student box above it, matching the reference form — not a full-page banner.
     const pinBox = !isExternal
         ? labelValueBox([
               ['PIN', pin || studentId],
@@ -133,25 +127,25 @@ export function createStudentInfo(data: any = {}) {
           ])
         : null
 
-    const dueDateBox = {
-        columns: [
-            { width: INFO_LEFT_WIDTH, ...labelValueBox([['PLEASE PAY ON OR BEFORE', dueDate, true]]) },
-            { width: INFO_GAP_WIDTH, text: '' },
-            { width: '*', ...(pinBox ?? { text: '' }) }
-        ],
-        margin: [0, 8, 0, 0]
-    }
+    const pleasePayBox = labelValueBox([['PLEASE PAY ON OR BEFORE', dueDate, true]])
 
     return {
-        stack: [
+        columns: [
             {
-                columns: [
-                    { width: INFO_LEFT_WIDTH, stack: [leftBox] },
-                    { width: INFO_GAP_WIDTH, text: '' },
-                    { width: '*', stack: rightStackItems }
+                width: INFO_LEFT_WIDTH,
+                stack: [
+                    leftBox,
+                    { ...pleasePayBox, margin: [0, 8, 0, 0] }
                 ]
             },
-            dueDateBox
+            { width: INFO_GAP_WIDTH, text: '' },
+            {
+                width: '*',
+                stack: [
+                    invoiceBox,
+                    ...(pinBox ? [{ ...pinBox, margin: [0, 4, 0, 0] }] : [])
+                ]
+            }
         ],
         margin: [0, 0, 0, 10]
     }
@@ -168,14 +162,14 @@ export function createFeeTable(items: any[] = [], options: any = {}) {
     const total =
         totalAmount != null ? totalAmount : items.reduce((sum: number, item: any) => sum + (item.amount || 0), 0)
 
-    const showPeriod = !!period
+    const showPeriod = !!period || items.some((item: any) => !!item.period)
     const headerRow: any[] = [
         { text: 'NO.', style: 'tableHeader', alignment: 'center' },
         { text: 'DESCRIPTION', style: 'tableHeader', alignment: 'center' },
         ...(showPeriod ? [{ text: 'PERIOD', style: 'tableHeader', alignment: 'center' }] : []),
         { text: 'AMOUNT', style: 'tableHeader', alignment: 'center' }
     ]
-    const widths: any[] = showPeriod ? [30, '*', 90, 90] : [30, '*', 90]
+    const widths: any[] = showPeriod ? [30, '*', 120, 90] : [30, '*', 90]
 
     const bodyRows: any[] = items.map((item: any, index: number) => {
         const cellStack: any[] = []
@@ -204,7 +198,7 @@ export function createFeeTable(items: any[] = [], options: any = {}) {
         return [
             { text: String(index + 1), alignment: 'center', style: 'tableCell' },
             cellStack.length === 0 ? { text: '', style: 'tableCell' } : { stack: cellStack },
-            ...(showPeriod ? [{ text: period, alignment: 'center', style: 'tableCell' }] : []),
+            ...(showPeriod ? [{ text: (item as any).period ?? period, alignment: 'center', style: 'tableCell' }] : []),
             { text: formatCurrency(item.amount), alignment: 'right', style: 'tableCell' }
         ]
     })
@@ -314,7 +308,7 @@ export function createLatePaymentNote(data: any = {}) {
             columns: [
                 { width: REMARKS_LABEL_WIDTH, text: '' },
                 {
-                    width: 'auto',
+                    width: '*',
                     text: '2. If you wish to pay for the annual school fees total charges will be BHT',
                     style: 'noteText',
                     margin: [0, 2, 4, 0]
@@ -327,7 +321,7 @@ export function createLatePaymentNote(data: any = {}) {
                     },
                     layout: INLINE_BOX_LAYOUT
                 },
-                { width: '*', text: '* See Appendix', style: 'noteText', margin: [4, 2, 0, 0] }
+                { width: 'auto', text: '* See Appendix', style: 'noteText', margin: [4, 2, 0, 0] }
             ],
             margin: [0, 2, 0, 0]
         })
@@ -697,11 +691,11 @@ function appendixBreakdownTable(section: { items?: any[]; discountRows?: any[]; 
 
 export function createInstalmentAppendix(data: any = null) {
     if (!data) return null
-    const { yearGroup = '', instalment = {}, annual = {} } = data
+    const { yearGroup = '', instalment = {}, annual = null, threeYear = null } = data
 
     // The section name sits above its box on the reference form; only the year group and the
     // ledger are enclosed.
-    const section = (title: string, breakdown: any) => ({
+    const section = (title: string, breakdown: any, yearLabel?: string) => ({
         stack: [
             { text: title, style: 'appendixSectionTitle', margin: [0, 0, 0, 3] },
             {
@@ -712,7 +706,7 @@ export function createInstalmentAppendix(data: any = null) {
                             {
                                 stack: [
                                     {
-                                        text: `Year ${yearGroup}`.replace('Year Year', 'Year'),
+                                        text: yearLabel ?? `Year ${yearGroup}`.replace('Year Year', 'Year'),
                                         style: 'appendixYearTitle',
                                         margin: [0, 0, 0, 10]
                                     },
@@ -726,26 +720,56 @@ export function createInstalmentAppendix(data: any = null) {
                 layout: BOX_LAYOUT
             }
         ],
-        margin: [0, 0, 0, 18]
+        margin: [0, 0, 0, 18],
+        unbreakable: true
     })
+
+    const header = {
+        columns: [
+            { width: '*', text: '' },
+            {
+                width: 'auto',
+                table: { widths: ['auto'], body: [[{ text: 'Appendix', style: 'appendixTitle' }]] },
+                layout: BOX_LAYOUT
+            }
+        ],
+        margin: [0, 0, 0, 10]
+    }
+
+    // 3-Year Package appendix shows the per-term and per-year equivalents on top (so the admin can
+    // see how the package compares) followed by the full 3-year breakdown with the Y1 discount.
+    if (threeYear) {
+        const yearMatch = String(yearGroup).match(/\d+/)
+        const startYear = yearMatch ? parseInt(yearMatch[0], 10) : null
+        const yearSections = (threeYear.years as any[]).map((yr: any, idx: number) => {
+            const sectionTitle = startYear != null ? `Year ${startYear + idx} — ${yr.label}` : `Year ${idx + 1} — ${yr.label}`
+            const yrDiscounts: any[] = yr.discountRows ?? []
+            const yrGross = Math.round((yr.total + yrDiscounts.reduce((s: number, r: any) => s + Math.abs(Number(r.amount ?? 0)), 0)) * 100) / 100
+            const yrOpeningItems = yrGross > 0 ? [{ name: `Academic Year ${yr.label}`, amount: yrGross }] : []
+            return section(sectionTitle, {
+                items: yrOpeningItems,
+                discountRows: yrDiscounts,
+                total: yr.total
+            }, `Academic Year ${yr.label}`)
+        })
+        return {
+            pageBreak: 'before',
+            stack: [
+                header,
+                section('Instalment', instalment),
+                ...(annual ? [section('Annual', annual)] : []),
+                { text: '3-Year Package', style: 'appendixSectionTitle', margin: [0, 0, 0, 8] },
+                ...yearSections
+            ]
+        }
+    }
 
     return {
         pageBreak: 'before',
         stack: [
-            // Boxed, right-aligned label — a tab-like marker rather than a page heading.
-            {
-                columns: [
-                    { width: '*', text: '' },
-                    {
-                        width: 'auto',
-                        table: { widths: ['auto'], body: [[{ text: 'Appendix', style: 'appendixTitle' }]] },
-                        layout: BOX_LAYOUT
-                    }
-                ],
-                margin: [0, 0, 0, 10]
-            },
+            header,
             section('Instalment', instalment),
-            section('Annual', annual)
+            ...(annual ? [section('Annual', annual)] : [])
         ]
     }
 }
@@ -953,13 +977,13 @@ export function formatCurrency(value: any): string {
 // ---------------------------------------------------------------------------
 // Document builder
 // ---------------------------------------------------------------------------
-export function buildDocDefinition({ header, studentInfo, content, styles = {} }: any) {
+export function buildDocDefinition({ header, studentInfo, content, styles = {}, font }: any) {
     // Extract header data (passed as the output of createHeader — a stack with text items)
     // and reuse it as page header on every page.
     const headerData = (header && (header as any).__data) || {}
     const pageHeader = getPageHeader(headerData)
     // Append INVOICE title to content (used to be inside createHeader)
-    const invoiceTitle = { text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, 0, 0, 10] }
+    const invoiceTitle = { text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, -10, 0, 10] }
     const docDef: any = {
         // Larger top margin to accommodate the repeating header block
         pageSize: 'A4' as const,
@@ -971,7 +995,7 @@ export function buildDocDefinition({ header, studentInfo, content, styles = {} }
             ...styles
         },
         defaultStyle: {
-            font: INVOICE_FONT
+            font: font ?? INVOICE_FONT
         }
     }
 

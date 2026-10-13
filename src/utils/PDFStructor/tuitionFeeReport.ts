@@ -9,9 +9,6 @@ import {
     buildDocDefinition
 } from './baseTemplate'
 
-// YEARLY is not a term -- it is the label a yearly invoice carries instead of one. Mapped to
-// itself deliberately: the PERIOD column is sized for 'TERM 1/2026/2027', and a longer label
-// like 'FULL YEAR' wraps onto a second line in every row of the table.
 const TERM_LABELS: Record<string, string> = { T1: 'TERM 1', T2: 'TERM 2', T3: 'TERM 3', YEARLY: 'YEARLY' }
 
 /**
@@ -23,7 +20,7 @@ export function buildTuitionFeeReport(data: any = {}) {
     const header = createHeader(data.header)
     const studentInfo = createStudentInfo(data.studentInfo)
 
-    const semesterLabel = TERM_LABELS[data.semesterLabel] || data.semesterLabel || ''
+    const semesterLabel = data.semesterLabel in TERM_LABELS ? TERM_LABELS[data.semesterLabel] : (data.semesterLabel ?? '')
     const schoolYear = (data.studentInfo?.schoolYear ?? '').replace(/\//g, '-')
     const period = semesterLabel && schoolYear ? `${semesterLabel}/${schoolYear}` : ''
 

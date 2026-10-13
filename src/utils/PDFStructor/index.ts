@@ -5,6 +5,7 @@ import { buildSchoolTripReport } from './schoolTripReport'
 import { buildEcaReport } from './ecaReport'
 import { buildHolidayCampReport } from './holidayCampReport'
 import { buildHolidayCampExternalReport } from './holidayCampExternalReport'
+import { buildExternalInvoiceReport } from './externalInvoiceReport'
 import { buildStudentActivitiesReport } from './studentActivitiesReport'
 import { buildReceiptReport } from './receiptReport'
 import { buildReceiptTaxInvoiceReport } from './receiptTaxInvoiceReport'
@@ -17,6 +18,7 @@ export enum ReportType {
     ECA = 'ECA',
     HOLIDAY_CAMP = 'HOLIDAY_CAMP',
     HOLIDAY_CAMP_EXTERNAL = 'HOLIDAY_CAMP_EXTERNAL',
+    EXTERNAL_INVOICE = 'EXTERNAL_INVOICE',
     STUDENT_ACTIVITIES = 'STUDENT_ACTIVITIES',
     RECEIPT = 'RECEIPT',
     RECEIPT_TAX_INVOICE = 'RECEIPT_TAX_INVOICE'
@@ -62,6 +64,11 @@ export const REPORT_TYPES: Record<string, { label: string; description: string; 
         label: 'Holiday Camp (External Student)',
         description: 'Holiday camp invoice for external students (simplified layout)',
         builder: buildHolidayCampExternalReport
+    },
+    [ReportType.EXTERNAL_INVOICE]: {
+        label: 'External Invoice',
+        description: 'External client invoice with 6-column line items, dual bank, VAT row, and Nominally signature',
+        builder: buildExternalInvoiceReport
     },
     [ReportType.STUDENT_ACTIVITIES]: {
         label: 'Student Activities',
