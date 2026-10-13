@@ -51,10 +51,10 @@ const BOX_LAYOUT = {
     vLineWidth: (i: number, node: any) => (i === 0 || i === node.table.widths.length ? 1 : 0),
     hLineColor: () => '#000000',
     vLineColor: () => '#000000',
-    paddingLeft: () => 8,
-    paddingRight: () => 8,
-    paddingTop: () => 6,
-    paddingBottom: () => 6
+    paddingLeft: () => 10,
+    paddingRight: () => 10,
+    paddingTop: () => 8,
+    paddingBottom: () => 8
 }
 
 // Labels are bold and share a column; the fixed right margin is what lines the values up
@@ -64,8 +64,8 @@ function labelValueBox(rows: Array<[string, string, boolean?]>) {
         table: {
             widths: ['auto', '*'],
             body: rows.map(([label, value, bold]) => [
-                { text: label, style: 'infoLabel', bold: true, margin: [0, 0, 18, 0] },
-                { text: value, style: 'infoValue', bold: !!bold, ...thaiFont(value) }
+                { text: label, style: 'infoLabel', bold: true, margin: [0, 0, 18, 0], noWrap: true },
+                { text: value, style: 'infoValue', bold: !!bold, noWrap: true, ...thaiFont(value) }
             ])
         },
         layout: BOX_LAYOUT
@@ -92,23 +92,34 @@ export function createStudentInfo(data: any = {}) {
     } = data
 
     const nameLabel = isExternal ? 'Client name' : 'Student name'
-    const leftStack: any[] = [
-        { text: [{ text: `${nameLabel} : `, bold: true }, { text: studentName, ...thaiFont(studentName) }], style: 'infoValue', margin: [0, 0, 0, 10] }
-    ]
+    const leftStack: any[] = []
+    // Use columns-with-label so a wrapped value (long address) hangs under the value column,
+    // not back under the label — matches the reference form's hanging indent.
+    leftStack.push({
+        columns: [
+            { width: 'auto', text: `${nameLabel} : `, style: 'infoValue', bold: true },
+            { width: '*', text: studentName, style: 'infoValue', ...thaiFont(studentName) }
+        ],
+        margin: [0, 0, 0, 10]
+    })
     if (isExternal && contactName) {
         leftStack.push({
-            text: [{ text: 'Contact name : ', bold: true }, { text: contactName, ...thaiFont(contactName) }],
-            style: 'infoValue',
+            columns: [
+                { width: 'auto', text: 'Contact name : ', style: 'infoValue', bold: true },
+                { width: '*', text: contactName, style: 'infoValue', ...thaiFont(contactName) }
+            ],
             margin: [0, 0, 0, 4]
         })
     }
     leftStack.push({
-        text: [{ text: 'Address : ', bold: true }, { text: address, ...thaiFont(address) }],
-        style: 'infoValue'
+        columns: [
+            { width: 'auto', text: 'Address : ', style: 'infoValue', bold: true },
+            { width: '*', text: address, style: 'infoValue', ...thaiFont(address) }
+        ]
     })
     // The reference form leaves room under the address for a second wrapped line, so the box
     // keeps its height whether the address is one line or two.
-    leftStack.push({ text: '', margin: [0, 0, 0, 12] })
+    leftStack.push({ text: '', margin: [0, 0, 0, 60] })
 
     const leftBox = {
         table: { widths: ['*'], body: [[{ stack: leftStack }]] },
@@ -120,6 +131,9 @@ export function createStudentInfo(data: any = {}) {
         ['Date', invoiceDate]
     ])
 
+    // PIN/Classroom sits in the SAME right column as No/Date, directly below it, so the right
+    // column stacks to roughly the same height as the tall Student box on the left — matching
+    // the reference form's symmetric two-column layout.
     const pinBox = !isExternal
         ? labelValueBox([
               ['PIN', pin || studentId],
@@ -127,25 +141,28 @@ export function createStudentInfo(data: any = {}) {
           ])
         : null
 
-    const pleasePayBox = labelValueBox([['PLEASE PAY ON OR BEFORE', dueDate, true]])
+    const rightStackItems: any[] = [invoiceBox]
+    if (pinBox) rightStackItems.push({ ...pinBox, margin: [0, 8, 0, 0] })
+
+    const dueDateBox = {
+        columns: [
+            { width: INFO_LEFT_WIDTH, ...labelValueBox([['PLEASE PAY ON OR BEFORE', dueDate, true]]) },
+            { width: INFO_GAP_WIDTH, text: '' },
+            { width: '*', text: '' }
+        ],
+        margin: [0, 8, 0, 0]
+    }
 
     return {
-        columns: [
+        stack: [
             {
-                width: INFO_LEFT_WIDTH,
-                stack: [
-                    leftBox,
-                    { ...pleasePayBox, margin: [0, 8, 0, 0] }
+                columns: [
+                    { width: INFO_LEFT_WIDTH, stack: [leftBox] },
+                    { width: INFO_GAP_WIDTH, text: '' },
+                    { width: '*', stack: rightStackItems }
                 ]
             },
-            { width: INFO_GAP_WIDTH, text: '' },
-            {
-                width: '*',
-                stack: [
-                    invoiceBox,
-                    ...(pinBox ? [{ ...pinBox, margin: [0, 4, 0, 0] }] : [])
-                ]
-            }
+            dueDateBox
         ],
         margin: [0, 0, 0, 10]
     }
@@ -157,19 +174,19 @@ export function createStudentInfo(data: any = {}) {
 export function createFeeTable(items: any[] = [], options: any = {}) {
     // Floor, not a cap: the reference form keeps the table at a fixed height on a short
     // invoice, and it simply grows past this once there are more line items.
-    const { amountInWords = '', totalAmount = null, minRows = 10, period = '' } = options
+    const { amountInWords = '', totalAmount = null, minRows = 6, period = '' } = options
 
     const total =
         totalAmount != null ? totalAmount : items.reduce((sum: number, item: any) => sum + (item.amount || 0), 0)
 
-    const showPeriod = !!period || items.some((item: any) => !!item.period)
+    const showPeriod = !!period
     const headerRow: any[] = [
         { text: 'NO.', style: 'tableHeader', alignment: 'center' },
         { text: 'DESCRIPTION', style: 'tableHeader', alignment: 'center' },
         ...(showPeriod ? [{ text: 'PERIOD', style: 'tableHeader', alignment: 'center' }] : []),
         { text: 'AMOUNT', style: 'tableHeader', alignment: 'center' }
     ]
-    const widths: any[] = showPeriod ? [30, '*', 120, 90] : [30, '*', 90]
+    const widths: any[] = showPeriod ? [30, '*', 90, 90] : [30, '*', 90]
 
     const bodyRows: any[] = items.map((item: any, index: number) => {
         const cellStack: any[] = []
@@ -198,7 +215,7 @@ export function createFeeTable(items: any[] = [], options: any = {}) {
         return [
             { text: String(index + 1), alignment: 'center', style: 'tableCell' },
             cellStack.length === 0 ? { text: '', style: 'tableCell' } : { stack: cellStack },
-            ...(showPeriod ? [{ text: (item as any).period ?? period, alignment: 'center', style: 'tableCell' }] : []),
+            ...(showPeriod ? [{ text: period, alignment: 'center', style: 'tableCell' }] : []),
             { text: formatCurrency(item.amount), alignment: 'right', style: 'tableCell' }
         ]
     })
@@ -236,8 +253,8 @@ export function createFeeTable(items: any[] = [], options: any = {}) {
             vLineWidth: () => 1,
             hLineColor: () => '#000000',
             vLineColor: () => '#000000',
-            paddingLeft: () => 8,
-            paddingRight: () => 8,
+            paddingLeft: () => 10,
+            paddingRight: () => 10,
             paddingTop: () => 6,
             paddingBottom: () => 6
         },
@@ -272,7 +289,7 @@ export function createFeeTable(items: any[] = [], options: any = {}) {
 // ---------------------------------------------------------------------------
 // The reference form runs "REMARKS" inline with the first numbered remark, and boxes the
 // annual figure inside the second one. This column width keeps remark 2 aligned under remark 1.
-const REMARKS_LABEL_WIDTH = 60
+const REMARKS_LABEL_WIDTH = 72
 
 // Tight border box for the inline annual total — BOX_LAYOUT's padding is sized for the
 // info boxes and would swamp a figure sitting mid-sentence.
@@ -308,7 +325,7 @@ export function createLatePaymentNote(data: any = {}) {
             columns: [
                 { width: REMARKS_LABEL_WIDTH, text: '' },
                 {
-                    width: '*',
+                    width: 'auto',
                     text: '2. If you wish to pay for the annual school fees total charges will be BHT',
                     style: 'noteText',
                     margin: [0, 2, 4, 0]
@@ -321,7 +338,7 @@ export function createLatePaymentNote(data: any = {}) {
                     },
                     layout: INLINE_BOX_LAYOUT
                 },
-                { width: 'auto', text: '* See Appendix', style: 'noteText', margin: [4, 2, 0, 0] }
+                { width: '*', text: '* See Appendix', style: 'noteText', margin: [4, 2, 0, 0] }
             ],
             margin: [0, 2, 0, 0]
         })
@@ -453,17 +470,54 @@ export function createPaymentMethods(data: any = {}) {
     })
 
     if (!isExternal) {
-        // 3. PromptPay via Online Payment Link (replaced the former Bill Payment biller/QR block)
+        // 3. Bill Payment
+        const billPaymentText = `Bill Payment via Mobile Banking, Internet Banking, ATM or Bank Counter: Please use the QR code provided below to scan for payment. Kindly note that bank charges will apply to payments made via ATM or at the bank counter.`
         stack.push({
-            text: [
-                { text: '-  ' },
-                {
-                    text: 'PromptPay via Online Payment Link: An online payment link will be provided on the Parent Portal. Please access the link and scan the PromptPay QR code to complete the payment via your Mobile Banking application.'
-                }
-            ],
+            text: [{ text: '-  ' }, { text: billPaymentText }],
             style: 'paymentText',
-            margin: [0, 0, 0, 5]
+            margin: [0, 0, 0, 3]
         })
+
+        // Bill payment details + QR code
+        const billRows = [
+            ['Biller ID no.', billerIdNo],
+            ['Reference no. (Ref 1)', referenceNo1],
+            ['Reference no. (Ref 2)', referenceNo2]
+        ]
+
+        const billContent: any = {
+            columns: [
+                {
+                    width: '*',
+                    table: {
+                        widths: [120, '*'],
+                        body: billRows.map(([label, value]) => [
+                            { text: label, style: 'bankDetailLabel', border: [false, false, false, false] },
+                            { text: value, style: 'bankDetailValue', border: [false, false, false, false] }
+                        ])
+                    },
+                    layout: 'noBorders',
+                    margin: [80, 0, 0, 0]
+                }
+            ]
+        }
+
+        // Add QR code image (base64)
+        if (qrCodeBase64) {
+            billContent.columns.push({
+                width: 90,
+                stack: [
+                    {
+                        image: qrCodeBase64,
+                        fit: [50, 50],
+                        alignment: 'center'
+                    }
+                ],
+                margin: [-300, -8, 0, 0]
+            })
+        }
+
+        stack.push({ ...billContent, margin: [0, 0, 0, 5] })
 
         // 4. Credit card
         stack.push({
@@ -654,11 +708,11 @@ function appendixBreakdownTable(section: { items?: any[]; discountRows?: any[]; 
 
 export function createInstalmentAppendix(data: any = null) {
     if (!data) return null
-    const { yearGroup = '', instalment = {}, annual = null, threeYear = null } = data
+    const { yearGroup = '', instalment = {}, annual = {} } = data
 
     // The section name sits above its box on the reference form; only the year group and the
     // ledger are enclosed.
-    const section = (title: string, breakdown: any, yearLabel?: string) => ({
+    const section = (title: string, breakdown: any) => ({
         stack: [
             { text: title, style: 'appendixSectionTitle', margin: [0, 0, 0, 3] },
             {
@@ -669,7 +723,7 @@ export function createInstalmentAppendix(data: any = null) {
                             {
                                 stack: [
                                     {
-                                        text: yearLabel ?? `Year ${yearGroup}`.replace('Year Year', 'Year'),
+                                        text: `Year ${yearGroup}`.replace('Year Year', 'Year'),
                                         style: 'appendixYearTitle',
                                         margin: [0, 0, 0, 10]
                                     },
@@ -683,56 +737,26 @@ export function createInstalmentAppendix(data: any = null) {
                 layout: BOX_LAYOUT
             }
         ],
-        margin: [0, 0, 0, 18],
-        unbreakable: true
+        margin: [0, 0, 0, 18]
     })
-
-    const header = {
-        columns: [
-            { width: '*', text: '' },
-            {
-                width: 'auto',
-                table: { widths: ['auto'], body: [[{ text: 'Appendix', style: 'appendixTitle' }]] },
-                layout: BOX_LAYOUT
-            }
-        ],
-        margin: [0, 0, 0, 10]
-    }
-
-    // 3-Year Package appendix shows the per-term and per-year equivalents on top (so the admin can
-    // see how the package compares) followed by the full 3-year breakdown with the Y1 discount.
-    if (threeYear) {
-        const yearMatch = String(yearGroup).match(/\d+/)
-        const startYear = yearMatch ? parseInt(yearMatch[0], 10) : null
-        const yearSections = (threeYear.years as any[]).map((yr: any, idx: number) => {
-            const sectionTitle = startYear != null ? `Year ${startYear + idx} — ${yr.label}` : `Year ${idx + 1} — ${yr.label}`
-            const yrDiscounts: any[] = yr.discountRows ?? []
-            const yrGross = Math.round((yr.total + yrDiscounts.reduce((s: number, r: any) => s + Math.abs(Number(r.amount ?? 0)), 0)) * 100) / 100
-            const yrOpeningItems = yrGross > 0 ? [{ name: `Academic Year ${yr.label}`, amount: yrGross }] : []
-            return section(sectionTitle, {
-                items: yrOpeningItems,
-                discountRows: yrDiscounts,
-                total: yr.total
-            }, `Academic Year ${yr.label}`)
-        })
-        return {
-            pageBreak: 'before',
-            stack: [
-                header,
-                section('Instalment', instalment),
-                ...(annual ? [section('Annual', annual)] : []),
-                { text: '3-Year Package', style: 'appendixSectionTitle', margin: [0, 0, 0, 8] },
-                ...yearSections
-            ]
-        }
-    }
 
     return {
         pageBreak: 'before',
         stack: [
-            header,
+            // Boxed, right-aligned label — a tab-like marker rather than a page heading.
+            {
+                columns: [
+                    { width: '*', text: '' },
+                    {
+                        width: 'auto',
+                        table: { widths: ['auto'], body: [[{ text: 'Appendix', style: 'appendixTitle' }]] },
+                        layout: BOX_LAYOUT
+                    }
+                ],
+                margin: [0, 0, 0, 10]
+            },
             section('Instalment', instalment),
-            ...(annual ? [section('Annual', annual)] : [])
+            section('Annual', annual)
         ]
     }
 }
@@ -860,26 +884,28 @@ export function getBaseStyles() {
 export function getInvoiceStyles() {
     return {
         ...getBaseStyles(),
-        schoolName: { fontSize: 16, bold: true, color: '#000000' },
+        schoolName: { fontSize: 17, bold: true, color: '#000000' },
         managedByLabel: { fontSize: 10, color: '#000000' },
         schoolLocation: { fontSize: 13, bold: true, color: '#000000' },
         addressText: { fontSize: 10, color: '#000000' },
         invoiceTitle: { fontSize: 20, bold: true, color: '#000000' },
-        infoLabel: { fontSize: 10, color: '#000000' },
-        infoValue: { fontSize: 10, color: '#000000' },
-        tableHeader: { fontSize: 11, bold: true, color: '#000000' },
-        tableCell: { fontSize: 10.5, color: '#000000' },
-        totalWordsCell: { fontSize: 10, color: '#000000' },
-        totalLabel: { fontSize: 11, bold: true, color: '#000000' },
-        totalValue: { fontSize: 11, color: '#000000' },
-        noteTitle: { fontSize: 9.5, bold: true, color: '#000000' },
-        noteText: { fontSize: 9.5, color: '#000000' },
-        paymentTitle: { fontSize: 10, bold: true, color: '#000000' },
-        bankDetailLabel: { fontSize: 9.5, color: '#000000' },
-        bankDetailValue: { fontSize: 9.5, color: '#000000' },
-        signatureLabel: { fontSize: 10, color: '#000000' },
-        signatureName: { fontSize: 10, color: '#000000' },
-        signatureTitle: { fontSize: 10, bold: true, color: '#000000' },
+        infoLabel: { fontSize: 13, color: '#000000' },
+        infoValue: { fontSize: 13, color: '#000000' },
+        tableHeader: { fontSize: 12, bold: true, color: '#000000' },
+        tableCell: { fontSize: 11, color: '#000000' },
+        tableCellSubtext: { fontSize: 9, italics: true, color: '#666666' },
+        totalWordsCell: { fontSize: 11, color: '#000000' },
+        totalLabel: { fontSize: 12, bold: true, color: '#000000' },
+        totalValue: { fontSize: 12, color: '#000000' },
+        noteTitle: { fontSize: 11, bold: true, color: '#000000' },
+        noteText: { fontSize: 11, color: '#000000' },
+        paymentTitle: { fontSize: 11, bold: true, color: '#000000' },
+        paymentText: { fontSize: 11, color: '#000000' },
+        bankDetailLabel: { fontSize: 11, color: '#000000' },
+        bankDetailValue: { fontSize: 11, color: '#000000' },
+        signatureLabel: { fontSize: 11, color: '#000000' },
+        signatureName: { fontSize: 11, color: '#000000' },
+        signatureTitle: { fontSize: 11, bold: true, color: '#000000' },
         appendixTitle: { fontSize: 12, bold: true, color: '#000000' },
         appendixSectionTitle: { fontSize: 11, bold: true, color: '#000000' },
         appendixYearTitle: { fontSize: 11, bold: true, decoration: 'underline', color: '#000000' }
@@ -940,13 +966,13 @@ export function formatCurrency(value: any): string {
 // ---------------------------------------------------------------------------
 // Document builder
 // ---------------------------------------------------------------------------
-export function buildDocDefinition({ header, studentInfo, content, styles = {}, font }: any) {
+export function buildDocDefinition({ header, studentInfo, content, styles = {} }: any) {
     // Extract header data (passed as the output of createHeader — a stack with text items)
     // and reuse it as page header on every page.
     const headerData = (header && (header as any).__data) || {}
     const pageHeader = getPageHeader(headerData)
     // Append INVOICE title to content (used to be inside createHeader)
-    const invoiceTitle = { text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, -10, 0, 10] }
+    const invoiceTitle = { text: 'INVOICE', style: 'invoiceTitle', alignment: 'center', margin: [0, 0, 0, 10] }
     const docDef: any = {
         // Larger top margin to accommodate the repeating header block
         pageSize: 'A4' as const,
@@ -958,7 +984,7 @@ export function buildDocDefinition({ header, studentInfo, content, styles = {}, 
             ...styles
         },
         defaultStyle: {
-            font: font ?? INVOICE_FONT
+            font: INVOICE_FONT
         }
     }
 
