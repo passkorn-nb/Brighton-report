@@ -46,7 +46,7 @@ const initialize = async () => {
             .use(cors())
             .use(routes)
             .use(apiDocs)
-            .listen(Bun.env.PORT || 9500, server => {
+            .listen(Bun.env.PORT || 9600, server => {
                 logger.info(
                     `[Server] Service (${globalThis.version}) is running at ${server?.hostname}:${server?.port} 🧋`
                 )

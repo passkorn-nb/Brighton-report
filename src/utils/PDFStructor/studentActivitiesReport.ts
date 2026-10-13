@@ -3,7 +3,7 @@ import {
     createStudentInfo,
     createFeeTable,
     createLatePaymentNote,
-    createPaymentMethods,
+    createSimplePaymentMethods,
     createSignatureSection,
     buildDocDefinition
 } from './baseTemplate'
@@ -21,13 +21,12 @@ export function buildStudentActivitiesReport(data: any = {}) {
     })
 
     const latePaymentNote = createLatePaymentNote(data.latePayment)
-    const paymentMethods = createPaymentMethods(data.paymentMethods)
+    const paymentMethods = createSimplePaymentMethods(data.paymentDetails || data.paymentMethods)
     const signature = createSignatureSection(data.signature)
 
     return buildDocDefinition({
         header,
         studentInfo,
-        content: [feeTable, latePaymentNote, paymentMethods, signature],
-        headerData: data.header
+        content: [feeTable, latePaymentNote, paymentMethods, signature]
     })
 }

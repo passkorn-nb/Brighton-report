@@ -5,9 +5,11 @@ import { buildSchoolTripReport } from './schoolTripReport'
 import { buildEcaReport } from './ecaReport'
 import { buildHolidayCampReport } from './holidayCampReport'
 import { buildHolidayCampExternalReport } from './holidayCampExternalReport'
+import { buildExternalInvoiceReport } from './externalInvoiceReport'
 import { buildStudentActivitiesReport } from './studentActivitiesReport'
 import { buildReceiptReport } from './receiptReport'
 import { buildAcknowledgementReport } from './acknowledgementReport'
+import { buildReceiptTaxInvoiceReport } from './receiptTaxInvoiceReport'
 
 export enum ReportType {
     TUITION_FEE = 'TUITION_FEE',
@@ -17,9 +19,11 @@ export enum ReportType {
     ECA = 'ECA',
     HOLIDAY_CAMP = 'HOLIDAY_CAMP',
     HOLIDAY_CAMP_EXTERNAL = 'HOLIDAY_CAMP_EXTERNAL',
+    EXTERNAL_INVOICE = 'EXTERNAL_INVOICE',
     STUDENT_ACTIVITIES = 'STUDENT_ACTIVITIES',
     RECEIPT = 'RECEIPT',
-    ACKNOWLEDGEMENT = 'ACKNOWLEDGEMENT'
+    ACKNOWLEDGEMENT = 'ACKNOWLEDGEMENT',
+    RECEIPT_TAX_INVOICE = 'RECEIPT_TAX_INVOICE'
 }
 
 /**
@@ -49,19 +53,24 @@ export const REPORT_TYPES: Record<string, { label: string; description: string; 
         builder: buildSchoolTripReport
     },
     [ReportType.ECA]: {
-        label: 'ECA Sport & Music',
+        label: 'CCA Sport & Music',
         description: 'Extra-curricular activities invoice for sport and music (gymnastics, basketball, piano, etc.)',
         builder: buildEcaReport
     },
     [ReportType.HOLIDAY_CAMP]: {
-        label: "Holiday Camp (King's Student)",
-        description: "Holiday camp invoice for King's College students with early bird discounts",
+        label: 'Holiday Camp (Enrolled Student)',
+        description: 'Holiday camp invoice for Brighton College Bangkok students with early bird discounts',
         builder: buildHolidayCampReport
     },
     [ReportType.HOLIDAY_CAMP_EXTERNAL]: {
         label: 'Holiday Camp (External Student)',
         description: 'Holiday camp invoice for external students (simplified layout)',
         builder: buildHolidayCampExternalReport
+    },
+    [ReportType.EXTERNAL_INVOICE]: {
+        label: 'External Invoice',
+        description: 'External client invoice with 6-column line items, dual bank, VAT row, and Nominally signature',
+        builder: buildExternalInvoiceReport
     },
     [ReportType.STUDENT_ACTIVITIES]: {
         label: 'Student Activities',
@@ -77,6 +86,12 @@ export const REPORT_TYPES: Record<string, { label: string; description: string; 
         label: 'Acknowledgement of School Fee Payment',
         description: 'Cashier acknowledgement (2 copies)',
         builder: buildAcknowledgementReport
+    },
+    [ReportType.RECEIPT_TAX_INVOICE]: {
+        label: 'Receipt / Tax Invoice',
+        description:
+            'Bilingual ใบเสร็จรับเงิน / ใบกำกับภาษี on the school\'s pre-printed form — VAT breakdown, Buddhist-era date, Thai amount in words',
+        builder: buildReceiptTaxInvoiceReport
     }
 }
 

@@ -3,13 +3,13 @@ import {
     createStudentInfo,
     createFeeTable,
     createLatePaymentNote,
-    createPaymentMethods,
+    createSimplePaymentMethods,
     createSignatureSection,
     buildDocDefinition
 } from './baseTemplate'
 
 /**
- * Builds a Holiday Camp (King's student) invoice PDF.
+ * Builds a Holiday Camp (enrolled student) invoice PDF.
  * Items include camp fees and discounts (e.g. early bird) as line items.
  */
 export function buildHolidayCampReport(data: any = {}) {
@@ -22,13 +22,12 @@ export function buildHolidayCampReport(data: any = {}) {
     })
 
     const latePaymentNote = createLatePaymentNote(data.latePayment)
-    const paymentMethods = createPaymentMethods(data.paymentMethods)
+    const paymentMethods = createSimplePaymentMethods(data.paymentDetails || data.paymentMethods)
     const signature = createSignatureSection(data.signature)
 
     return buildDocDefinition({
         header,
         studentInfo,
-        content: [feeTable, latePaymentNote, paymentMethods, signature],
-        headerData: data.header
+        content: [feeTable, latePaymentNote, paymentMethods, signature]
     })
 }
