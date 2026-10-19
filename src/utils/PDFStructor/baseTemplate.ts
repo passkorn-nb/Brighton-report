@@ -740,42 +740,34 @@ export function createInstalmentAppendix(data: any = null) {
         margin: [0, 0, 0, 18]
     })
 
-    // 3-Year Package: one bordered box showing Year 1/2/3 totals only (no item detail).
+    // 3-Year Package: staircase showing Year 1 gross → first-year discount deduction → Years 2 & 3.
+    // Discount applies to Year 1 only; Years 2 & 3 carry their full locked rate.
     const threeYearYears: any[] = threeYear?.years ?? []
-    const threeYearSection = threeYearYears.length > 0 ? {
-        stack: [
-            { text: '3-Year Package', style: 'appendixSectionTitle', margin: [0, 0, 0, 3] },
-            {
-                table: {
-                    widths: ['*'],
-                    body: [[{
-                        stack: [
-                            {
-                                table: {
-                                    widths: ['*', APPENDIX_AMOUNT_COL],
-                                    body: [
-                                        ...threeYearYears.map((yr: any, idx: number) => [
-                                            { text: `Year ${idx + 1}: ${yr.label}`, style: 'tableCell' },
-                                            { text: formatCurrency(yr.total), style: 'tableCell', alignment: 'right' }
-                                        ]),
-                                        [{ text: ' ', style: 'tableCell' }, { text: '', style: 'tableCell' }],
-                                        [
-                                            { text: 'Total', style: 'totalLabel', margin: [APPENDIX_TOTAL_INDENT, 0, 0, 0] },
-                                            ruledAmount(threeYearYears.reduce((s: number, yr: any) => s + (yr.total ?? 0), 0), { bold: true, double: true })
-                                        ]
-                                    ]
-                                },
-                                layout: { hLineWidth: () => 0, vLineWidth: () => 0, paddingLeft: () => 2, paddingRight: () => 2, paddingTop: () => 5, paddingBottom: () => 5 }
-                            }
-                        ],
-                        margin: [4, 4, 4, 10]
-                    }]]
-                },
-                layout: BOX_LAYOUT
-            }
-        ],
-        margin: [0, 0, 0, 18]
-    } : null
+    const threeYearSection = threeYearYears.length > 0 ? (() => {
+        const [year1, ...restYears] = threeYearYears
+        const year1Gross = (year1?.items ?? []).reduce((s: number, i: any) => s + (i.amount ?? 0), 0)
+        const flatItems = [
+            { name: `Year 1: ${year1?.label ?? ''}`, amount: year1Gross || (year1?.total ?? 0) },
+            ...restYears.map((yr: any, idx: number) => ({ name: `Year ${idx + 2}: ${yr.label}`, amount: yr.total ?? 0 }))
+        ]
+        const grandTotal = threeYearYears.reduce((s: number, yr: any) => s + (yr.total ?? 0), 0)
+        return {
+            stack: [
+                { text: '3-Year Package', style: 'appendixSectionTitle', margin: [0, 0, 0, 3] },
+                {
+                    table: {
+                        widths: ['*'],
+                        body: [[{
+                            stack: [appendixBreakdownTable({ items: flatItems, discountRows: year1?.discountRows ?? [], total: grandTotal })],
+                            margin: [4, 4, 4, 10]
+                        }]]
+                    },
+                    layout: BOX_LAYOUT
+                }
+            ],
+            margin: [0, 0, 0, 18]
+        }
+    })() : null
 
     return {
         pageBreak: 'before',
