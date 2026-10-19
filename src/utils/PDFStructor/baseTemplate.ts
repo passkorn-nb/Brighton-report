@@ -708,7 +708,7 @@ function appendixBreakdownTable(section: { items?: any[]; discountRows?: any[]; 
 
 export function createInstalmentAppendix(data: any = null) {
     if (!data) return null
-    const { yearGroup = '', instalment = {}, annual = {} } = data
+    const { yearGroup = '', instalment = {}, annual = {}, threeYear = null } = data
 
     // The section name sits above its box on the reference form; only the year group and the
     // ledger are enclosed.
@@ -740,6 +740,32 @@ export function createInstalmentAppendix(data: any = null) {
         margin: [0, 0, 0, 18]
     })
 
+    // 3-Year Package: one bordered box containing per-year ledgers stacked vertically.
+    const threeYearYears: any[] = threeYear?.years ?? []
+    const threeYearSection = threeYearYears.length > 0 ? {
+        stack: [
+            { text: '3-Year Package', style: 'appendixSectionTitle', margin: [0, 0, 0, 3] },
+            {
+                table: {
+                    widths: ['*'],
+                    body: [[{
+                        stack: threeYearYears.flatMap((yr: any, idx: number) => [
+                            {
+                                text: `Year ${idx + 1}: ${yr.label}`,
+                                style: 'appendixYearTitle',
+                                margin: [0, idx === 0 ? 0 : 12, 0, 8]
+                            },
+                            appendixBreakdownTable({ items: yr.items, discountRows: yr.discountRows, total: yr.total })
+                        ]),
+                        margin: [4, 4, 4, 10]
+                    }]]
+                },
+                layout: BOX_LAYOUT
+            }
+        ],
+        margin: [0, 0, 0, 18]
+    } : null
+
     return {
         pageBreak: 'before',
         stack: [
@@ -756,7 +782,8 @@ export function createInstalmentAppendix(data: any = null) {
                 margin: [0, 0, 0, 10]
             },
             section('Instalment', instalment),
-            section('Annual', annual)
+            section('Annual', annual),
+            ...(threeYearSection ? [threeYearSection] : [])
         ]
     }
 }
