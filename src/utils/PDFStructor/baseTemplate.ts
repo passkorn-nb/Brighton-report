@@ -740,7 +740,7 @@ export function createInstalmentAppendix(data: any = null) {
         margin: [0, 0, 0, 18]
     })
 
-    // 3-Year Package: one bordered box containing per-year ledgers stacked vertically.
+    // 3-Year Package: one bordered box showing Year 1/2/3 totals only (no item detail).
     const threeYearYears: any[] = threeYear?.years ?? []
     const threeYearSection = threeYearYears.length > 0 ? {
         stack: [
@@ -749,14 +749,25 @@ export function createInstalmentAppendix(data: any = null) {
                 table: {
                     widths: ['*'],
                     body: [[{
-                        stack: threeYearYears.flatMap((yr: any, idx: number) => [
+                        stack: [
                             {
-                                text: `Year ${idx + 1}: ${yr.label}`,
-                                style: 'appendixYearTitle',
-                                margin: [0, idx === 0 ? 0 : 12, 0, 8]
-                            },
-                            appendixBreakdownTable({ items: yr.items, discountRows: yr.discountRows, total: yr.total })
-                        ]),
+                                table: {
+                                    widths: ['*', APPENDIX_AMOUNT_COL],
+                                    body: [
+                                        ...threeYearYears.map((yr: any, idx: number) => [
+                                            { text: `Year ${idx + 1}: ${yr.label}`, style: 'tableCell' },
+                                            { text: formatCurrency(yr.total), style: 'tableCell', alignment: 'right' }
+                                        ]),
+                                        [{ text: ' ', style: 'tableCell' }, { text: '', style: 'tableCell' }],
+                                        [
+                                            { text: 'Total', style: 'totalLabel', margin: [APPENDIX_TOTAL_INDENT, 0, 0, 0] },
+                                            ruledAmount(threeYearYears.reduce((s: number, yr: any) => s + (yr.total ?? 0), 0), { bold: true, double: true })
+                                        ]
+                                    ]
+                                },
+                                layout: { hLineWidth: () => 0, vLineWidth: () => 0, paddingLeft: () => 2, paddingRight: () => 2, paddingTop: () => 5, paddingBottom: () => 5 }
+                            }
+                        ],
                         margin: [4, 4, 4, 10]
                     }]]
                 },
