@@ -30,10 +30,7 @@ export function buildTuitionFeeReport(data: any = {}) {
         period
     })
 
-    const latePaymentNote = createLatePaymentNote({
-        ...data.latePayment,
-        annualTotal: data.appendix?.annual?.total ?? null
-    })
+    const latePaymentNote = createLatePaymentNote(data.latePayment)
     const paymentMethods = createSimplePaymentMethods(data.paymentDetails)
     const signature = createSignatureSection(data.signature)
     const appendix = createInstalmentAppendix(data.appendix)
