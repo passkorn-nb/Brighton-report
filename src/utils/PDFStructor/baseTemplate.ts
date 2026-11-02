@@ -915,11 +915,32 @@ function appendixThreeYearSection(title: string, section: any, yearGroup: string
         ruledAmount(year1.net ?? 0, { bold: true })
     ])
     advanceYears.forEach((yr: any) => {
-        rows.push([
-            { text: `Advance Tuition Fees (${yr.label ?? ''})`, style: 'tableCell' },
-            { text: '', style: 'tableCell' },
-            { text: formatCurrency(yr.amount), alignment: 'right', style: 'tableCell' }
-        ])
+        const hasDiscount = (yr.discountRows ?? []).length > 0
+        if (hasDiscount) {
+            rows.push([
+                { text: `Advance Tuition Fees (${yr.label ?? ''})`, style: 'tableCell' },
+                { text: '', style: 'tableCell' },
+                { text: formatCurrency(yr.gross ?? yr.amount ?? 0), alignment: 'right', style: 'tableCell' }
+            ])
+            ;(yr.discountRows ?? []).forEach((row: any) => {
+                rows.push([
+                    { text: [{ text: 'Deduct ', bold: true, decoration: 'underline' }, { text: row.name ?? '', ...thaiFont(row.name) }], style: 'tableCell' },
+                    { text: row.calcLabel ?? '', alignment: 'right', style: 'tableCell', italics: true, color: '#555555' },
+                    ruledAmount(row.amount ?? 0)
+                ])
+            })
+            rows.push([
+                { text: `Net Advance Tuition Fees (${yr.label ?? ''})`, style: 'totalLabel' },
+                { text: '', style: 'tableCell' },
+                ruledAmount(yr.net ?? 0, { bold: true })
+            ])
+        } else {
+            rows.push([
+                { text: `Advance Tuition Fees (${yr.label ?? ''})`, style: 'tableCell' },
+                { text: '', style: 'tableCell' },
+                { text: formatCurrency(yr.net ?? yr.amount ?? 0), alignment: 'right', style: 'tableCell' }
+            ])
+        }
     })
     rows.push([{ text: ' ', style: 'tableCell' }, {}, {}])
     rows.push([
