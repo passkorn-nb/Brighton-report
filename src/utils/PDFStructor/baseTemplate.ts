@@ -72,9 +72,9 @@ function labelValueBox(rows: Array<[string, string, boolean?]>) {
     }
 }
 
-// Student box and due-date box run to 68% of the content width; the No/Date and PIN boxes
-// take the remainder (~30%). Proportions calibrated to reference form.
-const INFO_LEFT_WIDTH = '68%'
+// Student box and due-date box run to 60% of the content width; the No/Date and PIN boxes
+// take the remainder (~38%). Proportions calibrated to reference form.
+const INFO_LEFT_WIDTH = '60%'
 const INFO_GAP_WIDTH = '2%'
 
 export function createStudentInfo(data: any = {}) {
@@ -353,7 +353,7 @@ const INLINE_BOX_LAYOUT = {
 }
 
 export function createLatePaymentNote(data: any = {}) {
-    const { lateChargeRate = '1.25%', remarksNote = null } = data
+    const { lateChargeRate = '1.25%', remarksNote = null, annualTotal = null, threeYearTotal = null } = data
 
     const rows: any[] = [
         {
@@ -368,11 +368,32 @@ export function createLatePaymentNote(data: any = {}) {
         }
     ]
 
+    let n = 2
+    if (annualTotal != null) {
+        rows.push({
+            columns: [
+                { width: REMARKS_LABEL_WIDTH, text: '' },
+                { width: '*', text: `${n}. If you wish to pay for the annual school fees total charges will be BHT. ${formatCurrency(annualTotal)} *See Appendix`, style: 'noteText', margin: [0, 2, 0, 0] }
+            ],
+            margin: [0, 2, 0, 0]
+        })
+        n++
+    }
+    if (threeYearTotal != null) {
+        rows.push({
+            columns: [
+                { width: REMARKS_LABEL_WIDTH, text: '' },
+                { width: '*', text: `${n}. If you wish to pay for the 3-Year Package total charges will be BHT. ${formatCurrency(threeYearTotal)} *See Appendix`, style: 'noteText', margin: [0, 2, 0, 0] }
+            ],
+            margin: [0, 2, 0, 0]
+        })
+        n++
+    }
     if (remarksNote) {
         rows.push({
             columns: [
                 { width: REMARKS_LABEL_WIDTH, text: '' },
-                { width: '*', text: `2. ${remarksNote}`, style: 'noteText', margin: [0, 2, 0, 0] }
+                { width: '*', text: `${n}. ${remarksNote}`, style: 'noteText', margin: [0, 2, 0, 0] }
             ],
             margin: [0, 2, 0, 0]
         })
@@ -380,7 +401,7 @@ export function createLatePaymentNote(data: any = {}) {
 
     return {
         stack: rows,
-        margin: [0, 6, 0, 6]
+        margin: [0, 4, 0, 4]
     }
 }
 
@@ -593,44 +614,50 @@ function signatureColumn(signatory: any, fallbackLabel: string, defaultTitle: st
 
     const roleTitle = title || defaultTitle
 
-    // The signature image sits just above the label: the negative bottom margin pulls the label
-    // row back up so the two overlap slightly instead of stacking with a gap.
+    // Signature area: image floated over the rule, or a minimal spacer to keep label and rule distinct.
     const imageNode: any = signatureBase64
-        ? { image: signatureBase64, fit: [80, 28], alignment: 'center', margin: [0, 0, 0, -16] }
-        : { text: '', margin: [0, 0, 0, 12] }
+        ? { image: signatureBase64, fit: [80, 28], alignment: 'center', margin: [0, 4, 0, -10] }
+        : { text: '', fontSize: 1, margin: [0, 2, 0, 0] }
+
+    // Bottom-border table produces the signature rule without canvas (canvas breaks column layout in pdfmake).
+    const ruleLine = {
+        table: { widths: ['*'], body: [[{ text: '', border: [false, false, false, true] }]] },
+        layout: {
+            hLineWidth: (i: number) => (i === 1 ? 0.5 : 0),
+            vLineWidth: () => 0,
+            hLineColor: () => '#000000',
+            paddingLeft: () => 0, paddingRight: () => 0, paddingTop: () => 0, paddingBottom: () => 2
+        }
+    }
 
     return {
         width: '*',
         stack: [
+            { text: fallbackLabel, style: 'signatureLabel' },
             imageNode,
-            // Label and name on one line (no dotted signature rule): "Prepared by" on the left, the name
-            // centred in the rest of the column.
-            {
-                columnGap: 8,
-                columns: [
-                    { width: 'auto', text: fallbackLabel, style: 'signatureLabel' },
-                    { width: '*', text: name, style: 'signatureName', alignment: 'center', ...thaiFont(name) }
-                ]
-            },
-            // An empty title prints no position line ("Prepared by" shows the creator's name only).
+            ruleLine,
+            { text: name, style: 'signatureName', alignment: 'center', margin: [0, 4, 0, 0], ...thaiFont(name) },
             ...(roleTitle ? [{ text: roleTitle, style: 'signatureTitle', alignment: 'center', margin: [0, 3, 0, 0] }] : [])
         ]
-        // No alignment here: it is inherited. The label stays left-aligned; the name, title and any
-        // signature image set their own centring.
     }
 }
 
 export function createSignatureSection(data: any = {}) {
-    const { preparedBy = {}, verifiedBy = {} } = data
+    const { preparedBy = {}, verifiedBy = {}, approvedBy } = data
+
+    const columns = [
+        signatureColumn(preparedBy, 'Prepared by', ''),
+        signatureColumn(verifiedBy, 'Verified by', ''),
+        signatureColumn(approvedBy ?? {}, 'Approved by', '')
+    ]
 
     return {
-        columns: [
-            // No default position under either signatory: both print the full name only.
-            signatureColumn(preparedBy, 'Prepared by', ''),
-            signatureColumn(verifiedBy, 'Verified by', '')
-        ],
-        columnGap: 24,
-        margin: [0, 16, 0, 0]
+        unbreakable: true,
+        stack: [{
+            columns,
+            columnGap: 24,
+            margin: [0, 10, 0, 0]
+        }]
     }
 }
 
@@ -740,36 +767,215 @@ function appendixBreakdownTable(section: { items?: any[]; discountRows?: any[]; 
     }
 }
 
-// Accepts { yearGroup?, instalment?, annual?, threeYear? } — renders only the sections that
-// carry items. instalment / annual: { items, discountRows?, total }.
-// threeYear: { years: [{ label, items?, discountRows?, total }] } — rendered as a staircase box.
-export function createInstalmentAppendix(data: any = null) {
-    if (!data) return null
-    const { yearGroup = '', instalment = null, annual = null, threeYear = null } = data
+const APPENDIX_TABLE_LAYOUT = {
+    hLineWidth: () => 0,
+    vLineWidth: () => 0,
+    paddingLeft: () => 2,
+    paddingRight: () => 2,
+    paddingTop: () => 5,
+    paddingBottom: () => 5
+}
 
-    // The section name sits above its box on the reference form; only the year group and the
-    // ledger are enclosed.
-    const section = (title: string, breakdown: any) => ({
+function appendixSectionBox(title: string, yearGroup: string, innerContent: any, remarks: any = null) {
+    return {
         stack: [
             { text: title, style: 'appendixSectionTitle', margin: [0, 0, 0, 3] },
             {
                 table: {
                     widths: ['*'],
-                    body: [
-                        [
-                            {
-                                stack: [
-                                    {
-                                        text: `Year ${yearGroup}`.replace('Year Year', 'Year'),
-                                        style: 'appendixYearTitle',
-                                        margin: [0, 0, 0, 10]
-                                    },
-                                    appendixBreakdownTable(breakdown)
-                                ],
-                                margin: [4, 4, 4, 10]
-                            }
-                        ]
-                    ]
+                    body: [[{
+                        stack: [
+                            { text: `Year ${yearGroup}`.replace('Year Year', 'Year'), style: 'appendixYearTitle', margin: [0, 0, 0, 8] },
+                            innerContent
+                        ],
+                        margin: [4, 4, 4, 10]
+                    }]]
+                },
+                layout: BOX_LAYOUT
+            },
+            ...(remarks ? [remarks] : [])
+        ],
+        margin: [0, 0, 0, 18]
+    }
+}
+
+// Instalment section: simple 3-column table [Description | Period | Amount], net amounts.
+function appendixInstalmentSection(title: string, section: any, yearGroup: string) {
+    const items: any[] = section.netItems ?? section.items ?? []
+    const addOns: any[] = section.addOns ?? []
+    const rows: any[] = [...items, ...addOns].map((item: any) => [
+        { text: item.name ?? '', style: 'tableCell', ...thaiFont(item.name) },
+        { text: item.period ?? '', alignment: 'center', style: 'tableCell', noWrap: true },
+        { text: formatCurrency(item.amount), alignment: 'right', style: 'tableCell' }
+    ])
+    rows.push([{ text: ' ', style: 'tableCell' }, {}, {}])
+    rows.push([
+        { text: 'Total', style: 'totalLabel' },
+        { text: '', style: 'tableCell' },
+        ruledAmount(section.total ?? 0, { bold: true, double: true })
+    ])
+    const table = {
+        table: { widths: ['*', 90, APPENDIX_AMOUNT_COL], body: [
+            [
+                { text: 'DESCRIPTION', style: 'tableHeader', alignment: 'center' },
+                { text: 'PERIOD', style: 'tableHeader', alignment: 'center' },
+                { text: 'AMOUNT', style: 'tableHeader', alignment: 'center' }
+            ],
+            ...rows
+        ]},
+        layout: APPENDIX_TABLE_LAYOUT
+    }
+    const remark = { text: 'This Appendix provides the detailed breakdown of fees included in the Invoice.', fontSize: 7, color: '#555555', margin: [0, 4, 0, 0] }
+    return appendixSectionBox(title, yearGroup, table, remark)
+}
+
+// Annual section: [Description | Calculation | Amount] with sequential discount staircase.
+function appendixAnnualSection(title: string, section: any, yearGroup: string) {
+    const items: any[] = section.items ?? []
+    const discountRows: any[] = section.discountRows ?? []
+    const addOns: any[] = section.addOns ?? []
+    const tuitionNet: number = section.tuitionNet ?? 0
+    const total: number = section.total ?? tuitionNet
+
+    const rows: any[] = []
+    items.forEach((item: any) => {
+        rows.push([
+            { text: item.name ?? '', style: 'tableCell', ...thaiFont(item.name) },
+            { text: '', style: 'tableCell' },
+            { text: formatCurrency(item.amount), alignment: 'right', style: 'tableCell' }
+        ])
+    })
+    discountRows.forEach((row: any) => {
+        rows.push([
+            { text: [{ text: 'Deduct ', bold: true, decoration: 'underline' }, { text: row.name ?? '', ...thaiFont(row.name) }], style: 'tableCell' },
+            { text: row.calcLabel ?? '', alignment: 'right', style: 'tableCell', italics: true, color: '#555555' },
+            ruledAmount(row.amount ?? 0)
+        ])
+    })
+    if (discountRows.length > 0) {
+        rows.push([
+            { text: 'Net Tuition Total', style: 'totalLabel' },
+            { text: '', style: 'tableCell' },
+            ruledAmount(tuitionNet, { bold: true })
+        ])
+    }
+    addOns.forEach((item: any) => {
+        rows.push([
+            { text: item.name ?? '', style: 'tableCell', ...thaiFont(item.name) },
+            { text: '', style: 'tableCell' },
+            { text: formatCurrency(item.amount), alignment: 'right', style: 'tableCell' }
+        ])
+    })
+    rows.push([{ text: ' ', style: 'tableCell' }, {}, {}])
+    rows.push([
+        { text: 'Total', style: 'totalLabel' },
+        { text: '', style: 'tableCell' },
+        ruledAmount(total, { bold: true, double: true })
+    ])
+    const table = {
+        table: { widths: ['*', 120, APPENDIX_AMOUNT_COL], body: [
+            [
+                { text: 'DESCRIPTION', style: 'tableHeader', alignment: 'center' },
+                { text: 'CALCULATION', style: 'tableHeader', alignment: 'center' },
+                { text: 'AMOUNT', style: 'tableHeader', alignment: 'center' }
+            ],
+            ...rows
+        ]},
+        layout: APPENDIX_TABLE_LAYOUT
+    }
+    const remark = { text: 'Discounts are applied sequentially. Each discount is calculated based on the remaining tuition fee balance after the preceding discount. Food fees are excluded from tuition fee discount calculations.', fontSize: 7, color: '#555555', margin: [0, 4, 0, 0] }
+    return appendixSectionBox(title, yearGroup, table, remark)
+}
+
+// 3-Year section: Year 1 annual breakdown + advance years at lockedRate.
+function appendixThreeYearSection(title: string, section: any, yearGroup: string) {
+    const year1 = section.year1 ?? {}
+    const advanceYears: any[] = section.advanceYears ?? []
+    const grandTotal: number = section.grandTotal ?? 0
+
+    const rows: any[] = []
+    rows.push([{ text: year1.label ?? '', style: 'tableCell', bold: true, colSpan: 3 }, {}, {}])
+    ;(year1.items ?? []).forEach((item: any) => {
+        rows.push([
+            { text: item.name ?? '', style: 'tableCell', ...thaiFont(item.name) },
+            { text: '', style: 'tableCell' },
+            { text: formatCurrency(item.amount), alignment: 'right', style: 'tableCell' }
+        ])
+    })
+    ;(year1.discountRows ?? []).forEach((row: any) => {
+        rows.push([
+            { text: [{ text: 'Deduct ', bold: true, decoration: 'underline' }, { text: row.name ?? '', ...thaiFont(row.name) }], style: 'tableCell' },
+            { text: row.calcLabel ?? '', alignment: 'right', style: 'tableCell', italics: true, color: '#555555' },
+            ruledAmount(row.amount ?? 0)
+        ])
+    })
+    rows.push([
+        { text: 'Net Annual Tuition Fees', style: 'totalLabel' },
+        { text: '', style: 'tableCell' },
+        ruledAmount(year1.net ?? 0, { bold: true })
+    ])
+    advanceYears.forEach((yr: any) => {
+        rows.push([
+            { text: `Advance Tuition Fees (${yr.label ?? ''})`, style: 'tableCell' },
+            { text: '', style: 'tableCell' },
+            { text: formatCurrency(yr.amount), alignment: 'right', style: 'tableCell' }
+        ])
+    })
+    rows.push([{ text: ' ', style: 'tableCell' }, {}, {}])
+    rows.push([
+        { text: 'Grand Total', style: 'totalLabel' },
+        { text: '', style: 'tableCell' },
+        ruledAmount(grandTotal, { bold: true, double: true })
+    ])
+    const table = {
+        table: { widths: ['*', 120, APPENDIX_AMOUNT_COL], body: [
+            [
+                { text: 'DESCRIPTION', style: 'tableHeader', alignment: 'center' },
+                { text: 'CALCULATION', style: 'tableHeader', alignment: 'center' },
+                { text: 'AMOUNT', style: 'tableHeader', alignment: 'center' }
+            ],
+            ...rows
+        ]},
+        layout: APPENDIX_TABLE_LAYOUT
+    }
+    const discRow = (year1.discountRows ?? [])[0]
+    const discPct = discRow ? (String(discRow.name ?? '').match(/(\d+(?:\.\d+)?%)/)?.[1] ?? '') : ''
+    const bulletLines = [
+        ...(discPct ? [`The ${discPct} annual tuition fee discount applies to the first academic year only.`] : []),
+        "Any additional discounts for the first academic year are applied according to the school's approved discount policy.",
+        'Food fees are charged for the first academic year only.',
+        'Tuition fees for subsequent academic years are based on the applicable fee rates for the relevant year groups.',
+        'Advance tuition payments must be allocated to the specified academic years and must not be used to offset other fees without authorisation.'
+    ]
+    const remark = {
+        stack: [
+            { text: 'Remarks:', fontSize: 7, bold: true, color: '#333333', margin: [0, 4, 0, 2] },
+            ...bulletLines.map((b) => ({ text: b, fontSize: 7, color: '#555555', margin: [0, 1, 0, 0] }))
+        ]
+    }
+    return appendixSectionBox(title, yearGroup, table, remark)
+}
+
+// Accepts { yearGroup?, instalment?, annual?, threeYear? } — renders only the sections that
+// carry items. New sections use netItems/tuitionNet/year1 fields; legacy falls back to staircase.
+export function createInstalmentAppendix(data: any = null) {
+    if (!data) return null
+    const { yearGroup = '', instalment = null, annual = null, threeYear = null } = data
+
+    // Legacy staircase section wrapper (used when new netItems/tuitionNet fields absent).
+    const legacySection = (title: string, breakdown: any) => ({
+        stack: [
+            { text: title, style: 'appendixSectionTitle', margin: [0, 0, 0, 3] },
+            {
+                table: {
+                    widths: ['*'],
+                    body: [[{
+                        stack: [
+                            { text: `Year ${yearGroup}`.replace('Year Year', 'Year'), style: 'appendixYearTitle', margin: [0, 0, 0, 10] },
+                            appendixBreakdownTable(breakdown)
+                        ],
+                        margin: [4, 4, 4, 10]
+                    }]]
                 },
                 layout: BOX_LAYOUT
             }
@@ -777,47 +983,59 @@ export function createInstalmentAppendix(data: any = null) {
         margin: [0, 0, 0, 18]
     })
 
-    // 3-Year Package: staircase showing Year 1 gross → first-year discount deduction → Years 2 & 3.
-    // Discount applies to Year 1 only; Years 2 & 3 carry their full locked rate.
-    const threeYearYears: any[] = threeYear?.years ?? []
-    const threeYearSection = threeYearYears.length > 0 ? (() => {
-        const [year1, ...restYears] = threeYearYears
-        const year1Gross = (year1?.items ?? []).reduce((s: number, i: any) => s + (i.amount ?? 0), 0)
-        const flatItems = [
-            { name: `Year 1: ${year1?.label ?? ''}`, amount: year1Gross || (year1?.total ?? 0) },
-            ...restYears.map((yr: any, idx: number) => ({ name: `Year ${idx + 2}: ${yr.label}`, amount: yr.total ?? 0 }))
-        ]
-        const grandTotal = threeYearYears.reduce((s: number, yr: any) => s + (yr.total ?? 0), 0)
-        return {
-            stack: [
-                { text: '3-Year Package', style: 'appendixSectionTitle', margin: [0, 0, 0, 3] },
-                {
-                    table: {
-                        widths: ['*'],
-                        body: [[{
-                            stack: [appendixBreakdownTable({ items: flatItems, discountRows: year1?.discountRows ?? [], total: grandTotal })],
-                            margin: [4, 4, 4, 10]
-                        }]]
-                    },
-                    layout: BOX_LAYOUT
-                }
-            ],
-            margin: [0, 0, 0, 18]
-        }
-    })() : null
-
-    // Only render sections that have items — don't show an empty Instalment box for an Annual-only invoice.
     const sections: any[] = []
-    if (instalment && (instalment.items?.length ?? 0) > 0) sections.push(section('Instalment', instalment))
-    if (annual && (annual.items?.length ?? 0) > 0) sections.push(section('Annual', annual))
-    if (threeYearSection) sections.push(threeYearSection)
+
+    // Instalment
+    if (instalment) {
+        const hasItems = (instalment.netItems?.length ?? instalment.items?.length ?? 0) > 0
+        if (hasItems) {
+            sections.push(instalment.netItems
+                ? appendixInstalmentSection('Instalment', instalment, yearGroup)
+                : legacySection('Instalment', instalment))
+        }
+    }
+
+    // Annual
+    if (annual && (annual.items?.length ?? 0) > 0) {
+        sections.push(annual.tuitionNet !== undefined
+            ? appendixAnnualSection('Annual', annual, yearGroup)
+            : legacySection('Annual', annual))
+    }
+
+    // 3-Year Package
+    if (threeYear) {
+        if (threeYear.year1) {
+            sections.push(appendixThreeYearSection('3-Year Package', threeYear, yearGroup))
+        } else {
+            // Legacy staircase for old threeYear.years format
+            const threeYearYears: any[] = threeYear.years ?? []
+            if (threeYearYears.length > 0) {
+                const [year1, ...restYears] = threeYearYears
+                const year1Gross = (year1?.items ?? []).reduce((s: number, i: any) => s + (i.amount ?? 0), 0)
+                const flatItems = [
+                    { name: `Year 1: ${year1?.label ?? ''}`, amount: year1Gross || (year1?.total ?? 0) },
+                    ...restYears.map((yr: any, idx: number) => ({ name: `Year ${idx + 2}: ${yr.label}`, amount: yr.total ?? 0 }))
+                ]
+                const grandTotal = threeYearYears.reduce((s: number, yr: any) => s + (yr.total ?? 0), 0)
+                sections.push({
+                    stack: [
+                        { text: '3-Year Package', style: 'appendixSectionTitle', margin: [0, 0, 0, 3] },
+                        {
+                            table: { widths: ['*'], body: [[{ stack: [appendixBreakdownTable({ items: flatItems, discountRows: year1?.discountRows ?? [], total: grandTotal })], margin: [4, 4, 4, 10] }]] },
+                            layout: BOX_LAYOUT
+                        }
+                    ],
+                    margin: [0, 0, 0, 18]
+                })
+            }
+        }
+    }
 
     if (sections.length === 0) return null
 
     return {
         pageBreak: 'before',
         stack: [
-            // Boxed, right-aligned label — a tab-like marker rather than a page heading.
             {
                 columns: [
                     { width: '*', text: '' },
