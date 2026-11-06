@@ -33,11 +33,11 @@ export function buildTuitionFeeReport(data: any = {}) {
     const latePaymentNote = createLatePaymentNote(data.latePayment)
     const paymentMethods = createSimplePaymentMethods(data.paymentDetails)
     const signature = createSignatureSection(data.signature)
-    const appendix = createInstalmentAppendix(data.appendix)
+    const appendixNodes = createInstalmentAppendix(data.appendix)
 
     return buildDocDefinition({
         header,
         studentInfo,
-        content: [feeTable, latePaymentNote, paymentMethods, signature, appendix]
+        content: [feeTable, latePaymentNote, paymentMethods, signature, ...appendixNodes]
     })
 }

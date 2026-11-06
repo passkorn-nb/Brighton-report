@@ -772,14 +772,14 @@ const APPENDIX_TABLE_LAYOUT = {
     vLineWidth: () => 0,
     paddingLeft: () => 2,
     paddingRight: () => 2,
-    paddingTop: () => 5,
-    paddingBottom: () => 5
+    paddingTop: () => 3,
+    paddingBottom: () => 3
 }
 
-function appendixSectionBox(title: string, yearGroup: string, innerContent: any, remarks: any = null) {
+function appendixSectionBox(title: string | any[], yearGroup: string, innerContent: any, remarks: any = null) {
     return {
         stack: [
-            { text: title, style: 'appendixSectionTitle', margin: [0, 0, 0, 3] },
+            { text: title, style: 'appendixSectionTitle', margin: [0, 0, 0, 3], keepWithNext: true },
             {
                 table: {
                     widths: ['*'],
@@ -799,23 +799,61 @@ function appendixSectionBox(title: string, yearGroup: string, innerContent: any,
     }
 }
 
-// Instalment section: simple 3-column table [Description | Period | Amount], net amounts.
-function appendixInstalmentSection(title: string, section: any, yearGroup: string) {
-    const items: any[] = section.netItems ?? section.items ?? []
+// Instalment section: [Description | Period/Calc | Amount]. Shows gross→discount→net when discounts exist.
+function appendixInstalmentSection(title: string | any[], section: any, yearGroup: string) {
+    const grossItems: any[] = section.items ?? []
+    const netItems: any[] = section.netItems ?? section.items ?? []
+    const discountRows: any[] = section.discountRows ?? []
     const addOns: any[] = section.addOns ?? []
-    const rows: any[] = [...items, ...addOns].map((item: any) => [
-        { text: item.name ?? '', style: 'tableCell', ...thaiFont(item.name) },
-        { text: item.period ?? '', alignment: 'center', style: 'tableCell', noWrap: true },
-        { text: formatCurrency(item.amount), alignment: 'right', style: 'tableCell' }
-    ])
+    const hasDiscounts = discountRows.length > 0
+
+    const rows: any[] = []
+    if (hasDiscounts) {
+        grossItems.forEach((item: any, idx: number) => {
+            const period = netItems[idx]?.period ?? ''
+            rows.push([
+                { text: item.name ?? '', style: 'tableCell', ...thaiFont(item.name) },
+                { text: period, alignment: 'center', style: 'tableCell', noWrap: true },
+                { text: formatCurrency(item.amount), alignment: 'right', style: 'tableCell' }
+            ])
+        })
+        discountRows.forEach((row: any) => {
+            rows.push([
+                { text: [{ text: 'Deduct ', bold: true, decoration: 'underline' }, { text: row.name ?? '', ...thaiFont(row.name) }], style: 'tableCell' },
+                { text: '', style: 'tableCell' },
+                ruledAmount(row.amount ?? 0)
+            ])
+        })
+        const netTuitionTotal = Math.round(netItems.reduce((s: number, i: any) => s + i.amount, 0) * 100) / 100
+        rows.push([
+            { text: 'Net Tuition Total', style: 'totalLabel' },
+            { text: '', style: 'tableCell' },
+            ruledAmount(netTuitionTotal, { bold: true })
+        ])
+    } else {
+        netItems.forEach((item: any) => {
+            rows.push([
+                { text: item.name ?? '', style: 'tableCell', ...thaiFont(item.name) },
+                { text: item.period ?? '', alignment: 'center', style: 'tableCell', noWrap: true },
+                { text: formatCurrency(item.amount), alignment: 'right', style: 'tableCell' }
+            ])
+        })
+    }
+    addOns.forEach((item: any) => {
+        rows.push([
+            { text: item.name ?? '', style: 'tableCell', ...thaiFont(item.name) },
+            { text: item.period ?? '', alignment: 'center', style: 'tableCell', noWrap: true },
+            { text: formatCurrency(item.amount), alignment: 'right', style: 'tableCell' }
+        ])
+    })
     rows.push([{ text: ' ', style: 'tableCell' }, {}, {}])
     rows.push([
-        { text: 'Total', style: 'totalLabel' },
+        { text: 'Total Amount Due', style: 'totalLabel' },
         { text: '', style: 'tableCell' },
         ruledAmount(section.total ?? 0, { bold: true, double: true })
     ])
     const table = {
-        table: { widths: ['*', 90, APPENDIX_AMOUNT_COL], body: [
+        table: { widths: ['*', 120, APPENDIX_AMOUNT_COL], body: [
             [
                 { text: 'DESCRIPTION', style: 'tableHeader', alignment: 'center' },
                 { text: 'PERIOD', style: 'tableHeader', alignment: 'center' },
@@ -829,19 +867,23 @@ function appendixInstalmentSection(title: string, section: any, yearGroup: strin
     return appendixSectionBox(title, yearGroup, table, remark)
 }
 
-// Annual section: [Description | Calculation | Amount] with sequential discount staircase.
-function appendixAnnualSection(title: string, section: any, yearGroup: string) {
+// Annual section: [Description | Calculation | Period | Amount] with sequential discount staircase.
+function appendixAnnualSection(title: string | any[], section: any, yearGroup: string) {
     const items: any[] = section.items ?? []
     const discountRows: any[] = section.discountRows ?? []
     const addOns: any[] = section.addOns ?? []
     const tuitionNet: number = section.tuitionNet ?? 0
     const total: number = section.total ?? tuitionNet
+    const period: string = section.period ?? ''
 
+    const addOnNameSetAnnual = new Set(addOns.map((i: any) => String(i.name ?? '')))
     const rows: any[] = []
-    items.forEach((item: any) => {
+    items.filter((item: any) => !addOnNameSetAnnual.has(`Annual ${item.name ?? ''}`)).forEach((item: any) => {
+        const name = `Annual ${item.name ?? ''}`
         rows.push([
-            { text: item.name ?? '', style: 'tableCell', ...thaiFont(item.name) },
+            { text: name, style: 'tableCell', ...thaiFont(name) },
             { text: '', style: 'tableCell' },
+            { text: period, alignment: 'center', style: 'tableCell', noWrap: true },
             { text: formatCurrency(item.amount), alignment: 'right', style: 'tableCell' }
         ])
     })
@@ -849,13 +891,15 @@ function appendixAnnualSection(title: string, section: any, yearGroup: string) {
         rows.push([
             { text: [{ text: 'Deduct ', bold: true, decoration: 'underline' }, { text: row.name ?? '', ...thaiFont(row.name) }], style: 'tableCell' },
             { text: row.calcLabel ?? '', alignment: 'right', style: 'tableCell', italics: true, color: '#555555' },
+            { text: period, alignment: 'center', style: 'tableCell', noWrap: true },
             ruledAmount(row.amount ?? 0)
         ])
     })
     if (discountRows.length > 0) {
         rows.push([
-            { text: 'Net Tuition Total', style: 'totalLabel' },
+            { text: 'Net Annual Tuition Fees', style: 'totalLabel' },
             { text: '', style: 'tableCell' },
+            { text: period, alignment: 'center', style: 'tableCell', bold: true, noWrap: true },
             ruledAmount(tuitionNet, { bold: true })
         ])
     }
@@ -863,21 +907,24 @@ function appendixAnnualSection(title: string, section: any, yearGroup: string) {
         rows.push([
             { text: item.name ?? '', style: 'tableCell', ...thaiFont(item.name) },
             { text: '', style: 'tableCell' },
+            { text: item.period ?? period, alignment: 'center', style: 'tableCell', noWrap: true },
             { text: formatCurrency(item.amount), alignment: 'right', style: 'tableCell' }
         ])
     })
-    rows.push([{ text: ' ', style: 'tableCell' }, {}, {}])
+    rows.push([{ text: ' ', style: 'tableCell' }, {}, {}, {}])
     rows.push([
-        { text: 'Total', style: 'totalLabel' },
+        { text: 'Total Amount Due', style: 'totalLabel' },
+        { text: '', style: 'tableCell' },
         { text: '', style: 'tableCell' },
         ruledAmount(total, { bold: true, double: true })
     ])
     const table = {
-        table: { widths: ['*', 120, APPENDIX_AMOUNT_COL], body: [
+        table: { widths: ['*', 120, 80, APPENDIX_AMOUNT_COL], body: [
             [
                 { text: 'DESCRIPTION', style: 'tableHeader', alignment: 'center' },
                 { text: 'CALCULATION', style: 'tableHeader', alignment: 'center' },
-                { text: 'AMOUNT', style: 'tableHeader', alignment: 'center' }
+                { text: 'PERIOD', style: 'tableHeader', alignment: 'center' },
+                { text: 'AMOUNT (THB)', style: 'tableHeader', alignment: 'center' }
             ],
             ...rows
         ]},
@@ -887,73 +934,79 @@ function appendixAnnualSection(title: string, section: any, yearGroup: string) {
     return appendixSectionBox(title, yearGroup, table, remark)
 }
 
-// 3-Year section: Year 1 annual breakdown + advance years at lockedRate.
-function appendixThreeYearSection(title: string, section: any, yearGroup: string) {
+// 3-Year section: Year 1 annual breakdown + advance years at lockedRate. [Description | Calculation | Period | Amount]
+function appendixThreeYearSection(title: string | any[], section: any, yearGroup: string) {
     const year1 = section.year1 ?? {}
     const advanceYears: any[] = section.advanceYears ?? []
+    const addOns: any[] = section.addOns ?? []
     const grandTotal: number = section.grandTotal ?? 0
+    const period: string = section.period ?? ''
 
+    // Base name from year1 items (mapper now passes clean system names without prefix/year)
+    const year1BaseName = ((year1.items ?? [])[0]?.name ?? 'Tuition fee')
+        .replace(/\s*\d{4}[-/]\d{4}\s*$/, '').trim()
+
+    const addOnNameSet = new Set(addOns.map((i: any) => String(i.name ?? '')))
     const rows: any[] = []
-    rows.push([{ text: year1.label ?? '', style: 'tableCell', bold: true, colSpan: 3 }, {}, {}])
-    ;(year1.items ?? []).forEach((item: any) => {
+    const year1Gross = (year1.items ?? [])
+        .filter((item: any) => !addOnNameSet.has(`Annual ${item.name ?? ''}`))
+        .reduce((s: number, item: any) => s + (item.amount ?? 0), 0)
+    if (year1Gross > 0) {
+        const name = 'Annual Tuition fees'
         rows.push([
-            { text: item.name ?? '', style: 'tableCell', ...thaiFont(item.name) },
+            { text: name, style: 'tableCell', ...thaiFont(name) },
             { text: '', style: 'tableCell' },
-            { text: formatCurrency(item.amount), alignment: 'right', style: 'tableCell' }
+            { text: period, alignment: 'center', style: 'tableCell', noWrap: true },
+            { text: formatCurrency(year1Gross), alignment: 'right', style: 'tableCell' }
         ])
-    })
+    }
     ;(year1.discountRows ?? []).forEach((row: any) => {
         rows.push([
             { text: [{ text: 'Deduct ', bold: true, decoration: 'underline' }, { text: row.name ?? '', ...thaiFont(row.name) }], style: 'tableCell' },
             { text: row.calcLabel ?? '', alignment: 'right', style: 'tableCell', italics: true, color: '#555555' },
+            { text: period, alignment: 'center', style: 'tableCell', noWrap: true },
             ruledAmount(row.amount ?? 0)
         ])
     })
     rows.push([
         { text: 'Net Annual Tuition Fees', style: 'totalLabel' },
         { text: '', style: 'tableCell' },
+        { text: period, alignment: 'center', style: 'tableCell', bold: true, noWrap: true },
         ruledAmount(year1.net ?? 0, { bold: true })
     ])
-    advanceYears.forEach((yr: any) => {
-        const hasDiscount = (yr.discountRows ?? []).length > 0
-        if (hasDiscount) {
-            rows.push([
-                { text: `Advance Tuition Fees (${yr.label ?? ''})`, style: 'tableCell' },
-                { text: '', style: 'tableCell' },
-                { text: formatCurrency(yr.gross ?? yr.amount ?? 0), alignment: 'right', style: 'tableCell' }
-            ])
-            ;(yr.discountRows ?? []).forEach((row: any) => {
-                rows.push([
-                    { text: [{ text: 'Deduct ', bold: true, decoration: 'underline' }, { text: row.name ?? '', ...thaiFont(row.name) }], style: 'tableCell' },
-                    { text: row.calcLabel ?? '', alignment: 'right', style: 'tableCell', italics: true, color: '#555555' },
-                    ruledAmount(row.amount ?? 0)
-                ])
-            })
-            rows.push([
-                { text: `Net Advance Tuition Fees (${yr.label ?? ''})`, style: 'totalLabel' },
-                { text: '', style: 'tableCell' },
-                ruledAmount(yr.net ?? 0, { bold: true })
-            ])
-        } else {
-            rows.push([
-                { text: `Advance Tuition Fees (${yr.label ?? ''})`, style: 'tableCell' },
-                { text: '', style: 'tableCell' },
-                { text: formatCurrency(yr.net ?? yr.amount ?? 0), alignment: 'right', style: 'tableCell' }
-            ])
-        }
+    // Advance years: "Advance Tuition fee Year N" (ordinal), period in PERIOD column
+    advanceYears.forEach((yr: any, idx: number) => {
+        const yrPeriod = String(yr.label ?? '').replace(/-/g, '/')
+        const yrName = `Advance Tuition fee Year ${idx + 2}`
+        rows.push([
+            { text: yrName, style: 'tableCell', ...thaiFont(yrName) },
+            { text: '', style: 'tableCell' },
+            { text: yrPeriod, alignment: 'center', style: 'tableCell', noWrap: true },
+            { text: formatCurrency(yr.net ?? yr.amount ?? 0), alignment: 'right', style: 'tableCell' }
+        ])
     })
-    rows.push([{ text: ' ', style: 'tableCell' }, {}, {}])
+    addOns.forEach((item: any) => {
+        rows.push([
+            { text: item.name ?? '', style: 'tableCell', ...thaiFont(item.name) },
+            { text: '', style: 'tableCell' },
+            { text: item.period ?? period, alignment: 'center', style: 'tableCell', noWrap: true },
+            { text: formatCurrency(item.amount), alignment: 'right', style: 'tableCell' }
+        ])
+    })
+    rows.push([{ text: ' ', style: 'tableCell' }, {}, {}, {}])
     rows.push([
-        { text: 'Grand Total', style: 'totalLabel' },
+        { text: 'Total Amount Due', style: 'totalLabel' },
+        { text: '', style: 'tableCell' },
         { text: '', style: 'tableCell' },
         ruledAmount(grandTotal, { bold: true, double: true })
     ])
     const table = {
-        table: { widths: ['*', 120, APPENDIX_AMOUNT_COL], body: [
+        table: { widths: ['*', 120, 80, APPENDIX_AMOUNT_COL], body: [
             [
                 { text: 'DESCRIPTION', style: 'tableHeader', alignment: 'center' },
                 { text: 'CALCULATION', style: 'tableHeader', alignment: 'center' },
-                { text: 'AMOUNT', style: 'tableHeader', alignment: 'center' }
+                { text: 'PERIOD', style: 'tableHeader', alignment: 'center' },
+                { text: 'AMOUNT (THB)', style: 'tableHeader', alignment: 'center' }
             ],
             ...rows
         ]},
@@ -986,7 +1039,7 @@ export function createInstalmentAppendix(data: any = null) {
     // Legacy staircase section wrapper (used when new netItems/tuitionNet fields absent).
     const legacySection = (title: string, breakdown: any) => ({
         stack: [
-            { text: title, style: 'appendixSectionTitle', margin: [0, 0, 0, 3] },
+            { text: title, style: 'appendixSectionTitle', margin: [0, 0, 0, 3], keepWithNext: true },
             {
                 table: {
                     widths: ['*'],
@@ -1004,6 +1057,11 @@ export function createInstalmentAppendix(data: any = null) {
         margin: [0, 0, 0, 18]
     })
 
+    const paymentOptionTitle = (name: string): any[] => [
+        { text: 'Payment Option: ', bold: true },
+        { text: name, color: '#1a5276', decoration: 'underline' }
+    ]
+
     const sections: any[] = []
 
     // Instalment
@@ -1011,7 +1069,7 @@ export function createInstalmentAppendix(data: any = null) {
         const hasItems = (instalment.netItems?.length ?? instalment.items?.length ?? 0) > 0
         if (hasItems) {
             sections.push(instalment.netItems
-                ? appendixInstalmentSection('Instalment', instalment, yearGroup)
+                ? appendixInstalmentSection(paymentOptionTitle(instalment.label ?? 'Instalment'), instalment, yearGroup)
                 : legacySection('Instalment', instalment))
         }
     }
@@ -1019,14 +1077,16 @@ export function createInstalmentAppendix(data: any = null) {
     // Annual
     if (annual && (annual.items?.length ?? 0) > 0) {
         sections.push(annual.tuitionNet !== undefined
-            ? appendixAnnualSection('Annual', annual, yearGroup)
+            ? appendixAnnualSection(paymentOptionTitle(annual.label ?? 'Annual'), annual, yearGroup)
             : legacySection('Annual', annual))
     }
 
     // 3-Year Package
     if (threeYear) {
         if (threeYear.year1) {
-            sections.push(appendixThreeYearSection('3-Year Package', threeYear, yearGroup))
+            const threeYearNode = appendixThreeYearSection(paymentOptionTitle('Three-Year Advance Payment'), threeYear, yearGroup)
+            ;(threeYearNode as any).__threeYear = true
+            sections.push(threeYearNode)
         } else {
             // Legacy staircase for old threeYear.years format
             const threeYearYears: any[] = threeYear.years ?? []
@@ -1040,7 +1100,7 @@ export function createInstalmentAppendix(data: any = null) {
                 const grandTotal = threeYearYears.reduce((s: number, yr: any) => s + (yr.total ?? 0), 0)
                 sections.push({
                     stack: [
-                        { text: '3-Year Package', style: 'appendixSectionTitle', margin: [0, 0, 0, 3] },
+                        { text: '3-Year Package', style: 'appendixSectionTitle', margin: [0, 0, 0, 3], keepWithNext: true },
                         {
                             table: { widths: ['*'], body: [[{ stack: [appendixBreakdownTable({ items: flatItems, discountRows: year1?.discountRows ?? [], total: grandTotal })], margin: [4, 4, 4, 10] }]] },
                             layout: BOX_LAYOUT
@@ -1052,25 +1112,37 @@ export function createInstalmentAppendix(data: any = null) {
         }
     }
 
-    if (sections.length === 0) return null
+    if (sections.length === 0) return []
 
-    return {
-        pageBreak: 'before',
-        stack: [
+    // Split Three-Year section from the rest so it can be a top-level content node with its
+    // own pageBreak: 'before' — keeping it inside the same stack causes pdfmake blank-page artefacts.
+    const threeYearIdx = sections.findIndex((s: any) => s.__threeYear === true)
+    const mainSections = threeYearIdx === -1 ? sections : sections.slice(0, threeYearIdx)
+    const threeYearSection = threeYearIdx === -1 ? null : sections[threeYearIdx]
+
+    const appendixBadge = {
+        columns: [
+            { width: '*', text: '' },
             {
-                columns: [
-                    { width: '*', text: '' },
-                    {
-                        width: 'auto',
-                        table: { widths: ['auto'], body: [[{ text: 'Appendix', style: 'appendixTitle' }]] },
-                        layout: BOX_LAYOUT
-                    }
-                ],
-                margin: [0, 0, 0, 10]
-            },
-            ...sections
-        ]
+                width: 'auto',
+                table: { widths: ['auto'], body: [[{ text: 'Appendix', style: 'appendixTitle' }]] },
+                layout: BOX_LAYOUT
+            }
+        ],
+        margin: [0, 0, 0, 10]
     }
+
+    const result: any[] = []
+    if (mainSections.length > 0) {
+        result.push({
+            margin: [0, 20, 0, 0],
+            stack: [appendixBadge, ...mainSections]
+        })
+    }
+    if (threeYearSection) {
+        result.push(threeYearSection)
+    }
+    return result
 }
 
 // ---------------------------------------------------------------------------
